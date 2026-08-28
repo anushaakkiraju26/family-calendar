@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs"
 DOCX_PATH = DOCS / "Family_Activity_Deep_Agent_Project_Documentation.docx"
 NOTEBOOK_PATH = ROOT / "family_activity_deep_agent.ipynb"
+IMAGES = ROOT / "images"
 
 
 def set_run_font(run, size=11, bold=False, color="000000", name="Arial"):
@@ -391,7 +392,50 @@ def code(text):
     return {"cell_type": "code", "execution_count": None, "metadata": {}, "outputs": [], "source": text.splitlines(keepends=True)}
 
 
+def build_notebook_diagrams():
+    """Create GitHub/Jupyter-renderable architecture illustrations."""
+    IMAGES.mkdir(parents=True, exist_ok=True)
+    diagrams = {
+        "01_architecture.svg": ("Family Activity Deep Agent — Architecture", ["Parent CLI", "Deep Agent\nCoordinator", "MCP Tool\nServer", "SQLite\nCalendar"], "Natural language → orchestration → typed tools → durable state"),
+        "02_mcp_tools.svg": ("MCP Tool Boundary", ["Read tools\nlist + conflicts", "Write tools\nevent lifecycle", "HITL gate\napproval", "Repository\nvalidation"], "Reads are autonomous; every write pauses before execution"),
+        "03_skills.svg": ("Skills — Progressive Disclosure", ["Skill catalog\ndescriptions", "Relevant\nSKILL.md", "Coordinator or\nspecialist", "Policy-aware\ntool call"], "Calendar policy • Reminder policy • Family preferences"),
+        "04_state.svg": ("State and Memory Boundary", ["CLI request\nnew thread", "In-memory\napproval state", "Temporary\nJSON artifacts", "SQLite\ndurable truth"], "Conversation is ephemeral; events, reminders, and audits persist"),
+        "05_subagents.svg": ("Coordinator and Specialist Agents", ["Intake\nnormalize", "Calendar\nevent lifecycle", "Conflict\nexplain overlaps", "Reminder\ndraft messages"], "The coordinator delegates only when specialization adds value"),
+        "06_hitl.svg": ("Human-in-the-Loop Write Gate", ["Proposed\nmutation", "Pending\napproval", "Approve or\nreject", "Execute and\nverify"], "No approval → no database mutation"),
+        "07_conflicts.svg": ("Deterministic Conflict Safety", ["Proposed\nevent", "Compare child\nand parent", "Repository\ntransaction", "Allow or\nreject"], "Critical overlap rules are enforced in code, not only prompts"),
+        "08_evaluations.svg": ("Offline End-to-End Evaluations", ["Fake tool-calling\nmodel", "Deep Agent +\nLangGraph", "Real MCP\nsubprocess", "Temporary\nSQLite"], "Repeatable verification without consuming Groq quota"),
+        "09_langsmith.svg": ("LangSmith Trace Tree", ["Root request\ntrace", "Coordinator\nmodel calls", "MCP tool\nspans", "Result and\nlatency"], "Synthetic demo data only—traces can contain prompts and tool results"),
+    }
+    fills = ["E8F0FE", "E6F4EA", "FEF7E0", "FCE8E6"]
+    strokes = ["1A73E8", "188038", "F9AB00", "D93025"]
+    for filename, (title, boxes, footer) in diagrams.items():
+        box_w, box_h, gap, start_x, y = 205, 120, 45, 65, 135
+        parts = [
+            '<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="420" viewBox="0 0 1100 420">',
+            '<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#5F6368"/></marker></defs>',
+            '<rect width="1100" height="420" rx="24" fill="#FFFFFF" stroke="#DADCE0"/>',
+            f'<text x="550" y="55" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="600" fill="#202124">{title}</text>',
+        ]
+        for index, label in enumerate(boxes):
+            x = start_x + index * (box_w + gap)
+            parts.append(f'<rect x="{x}" y="{y}" width="{box_w}" height="{box_h}" rx="16" fill="#{fills[index]}" stroke="#{strokes[index]}" stroke-width="2"/>')
+            lines = label.split("\n")
+            base_y = y + 53 - (len(lines) - 1) * 14
+            for line_index, line in enumerate(lines):
+                parts.append(f'<text x="{x + box_w / 2}" y="{base_y + line_index * 30}" text-anchor="middle" font-family="Arial, sans-serif" font-size="19" font-weight="600" fill="#202124">{line}</text>')
+            if index < len(boxes) - 1:
+                x1, x2, arrow_y = x + box_w + 8, x + box_w + gap - 8, y + box_h / 2
+                parts.append(f'<line x1="{x1}" y1="{arrow_y}" x2="{x2}" y2="{arrow_y}" stroke="#5F6368" stroke-width="3" marker-end="url(#arrow)"/>')
+        parts.extend([
+            f'<text x="550" y="325" text-anchor="middle" font-family="Arial, sans-serif" font-size="19" fill="#5F6368">{footer}</text>',
+            '<text x="550" y="372" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#80868B">Family Activity Agent • Course MVP</text>',
+            "</svg>",
+        ])
+        (IMAGES / filename).write_text("\n".join(parts))
+
+
 def build_notebook():
+    build_notebook_diagrams()
     cells = [
         md("""# Family Activity Deep Agent — Shared Calendar & Reminder Drafts
 
@@ -427,6 +471,7 @@ Parent request → Family Coordinator (plans, routes, verifies)
 | Deterministic safety | Repository validates future times, versions, and overlaps |
 | Observability | Optional LangSmith trace tree |
 """),
+        md("![Family Activity Deep Agent architecture](./images/01_architecture.svg)\n"),
         md("""## 1. Install and API keys
 
 Run this notebook from the repository root with the project virtual environment. Dependencies are managed by `pyproject.toml`. Never print API keys in notebook output."""),
@@ -456,6 +501,7 @@ print("Model:", os.getenv("FAMILY_ACTIVITY_MODEL", "openai/gpt-oss-20b"))
         md("""## 2. MCP tools
 
 The Deep Agent launches the local MCP server as a managed stdio subprocess. Tool definitions live in `src/family_activity_mcp/server.py`; validation and SQLite transactions live in `repository.py`."""),
+        md("![MCP tool boundary](./images/02_mcp_tools.svg)\n"),
         code("""import asyncio
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from family_activity_agent.agent import mcp_connection
@@ -471,6 +517,7 @@ for tool in tools:
         md("""## 3. Skills (progressive disclosure)
 
 The coordinator sees skill descriptions first and loads full `SKILL.md` instructions only when relevant. This keeps the always-on prompt smaller while preserving domain policy."""),
+        md("![Skills progressive disclosure](./images/03_skills.svg)\n"),
         code("""for path in sorted(Path("skills").glob("*/SKILL.md")):
     print(f"\\n===== {path} =====")
     print(path.read_text())
@@ -478,6 +525,7 @@ The coordinator sees skill descriptions first and loads full `SKILL.md` instruct
         md("""## 4. State boundary
 
 SQLite is the sole durable source of truth. The checkpointer is in-memory because it is needed only to pause and resume approval within the current process. Temporary planning artifacts are cleared at the start of each request so stale files cannot influence a new command."""),
+        md("![State and memory boundary](./images/04_state.svg)\n"),
         code("""from family_activity_agent.cli import RUN_ARTIFACTS
 
 print("Durable state: data/family_activity.db")
@@ -488,6 +536,7 @@ for artifact in RUN_ARTIFACTS:
         md("""## 5. Specialist subagents
 
 Each specialist has a focused prompt and restricted tool set. The coordinator handles simple requests directly to reduce latency and delegates only when specialization adds value."""),
+        md("![Coordinator and specialist agents](./images/05_subagents.svg)\n"),
         code("""from family_activity_agent.prompts import (
     INTAKE_PROMPT, CALENDAR_PROMPT, CONFLICT_PROMPT, REMINDER_PROMPT
 )
@@ -528,6 +577,7 @@ read_result["messages"][-1].pretty_print()
         md("""## 8. Human-in-the-loop event creation
 
 The next cell proposes a future event. The graph must stop before `create_event`; inspect the exact tool arguments before approving."""),
+        md("![Human-in-the-loop write gate](./images/06_hitl.svg)\n"),
         code("""from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -585,6 +635,7 @@ verify_result["messages"][-1].pretty_print()
         md("""## 10. Conflict safety
 
 Different children may have overlapping activities. Assigning overlapping events to the same parent is rejected deterministically by the repository, even if the model skips an explanatory check."""),
+        md("![Deterministic conflict safety](./images/07_conflicts.svg)\n"),
         code("""print(
     "Try in the CLI:",
     'family-activity-agent "Assign two overlapping activities in family-1 to parent-1"',
@@ -604,6 +655,7 @@ The reminder tool stores recipient IDs, scheduled time, channel, and `message_bo
         md("""## 12. Offline evaluations
 
 The automated suite uses a deterministic fake chat model but retains the actual Deep Agent, LangGraph interrupts, MCP subprocess, and SQLite layers. This avoids Groq quota use in CI."""),
+        md("![Offline end-to-end evaluations](./images/08_evaluations.svg)\n"),
         code("""# Run from a notebook cell if desired:
 # !pytest -q
 
@@ -616,6 +668,7 @@ for case in cases[:5]:
         md("""## 13. LangSmith observability
 
 When enabled, the trace shows the coordinator at the root, model calls and MCP tools as nested spans, and approval/resumption across the workflow. Use only synthetic family data in traced demonstrations."""),
+        md("![LangSmith trace tree](./images/09_langsmith.svg)\n"),
         code("""print("LangSmith project:", os.getenv("LANGSMITH_PROJECT", "not configured"))
 print("Tracing enabled:", os.getenv("LANGSMITH_TRACING", "false"))
 """),

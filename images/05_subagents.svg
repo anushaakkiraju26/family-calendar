@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="420" viewBox="0 0 1100 420">
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#5F6368"/></marker></defs>
+<rect width="1100" height="420" rx="24" fill="#FFFFFF" stroke="#DADCE0"/>
+<text x="550" y="55" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="600" fill="#202124">Coordinator and Specialist Agents</text>
+<rect x="65" y="135" width="205" height="120" rx="16" fill="#E8F0FE" stroke="#1A73E8" stroke-width="2"/>
+<text x="167.5" y="174" text-anchor="middle" font-family="Arial, sans-serif" font-size="19" font-weight="600" fill="#202124">Intake</text>
+<text x="167.5" y="204" text-anchor="middle" font-family="Arial, sans-serif" font-size="19" font-weight="600" fill="#202124">normalize</text>
+<line x1="278" y1="195.0" x2="307" y2="195.0" stroke="#5F6368" stroke-width="3" marker-end="url(#arrow)"/>
+<rect x="315" y="135" width="205" height="120" rx="16" fill="#E6F4EA" stroke="#188038" stroke-width="2"/>
+<text x="417.5" y="174" text-anchor="middle" font-family="Arial, sans-serif" font-size="19" font-weight="600" fill="#202124">Calendar</text>
+<text x="417.5" y="204" text-anchor="middle" font-family="Arial, sans-serif" font-size="19" font-weight="600" fill="#202124">event lifecycle</text>
+<line x1="528" y1="195.0" x2="557" y2="195.0" stroke="#5F6368" stroke-width="3" marker-end="url(#arrow)"/>
+<rect x="565" y="135" width="205" height="120" rx="16" fill="#FEF7E0" stroke="#F9AB00" stroke-width="2"/>
+<text x="667.5" y="174" text-anchor="middle" font-family="Arial, sans-serif" font-size="19" font-weight="600" fill="#202124">Conflict</text>
+<text x="667.5" y="204" text-anchor="middle" font-family="Arial, sans-serif" font-size="19" font-weight="600" fill="#202124">explain overlaps</text>
+<line x1="778" y1="195.0" x2="807" y2="195.0" stroke="#5F6368" stroke-width="3" marker-end="url(#arrow)"/>
+<rect x="815" y="135" width="205" height="120" rx="16" fill="#FCE8E6" stroke="#D93025" stroke-width="2"/>
+<text x="917.5" y="174" text-anchor="middle" font-family="Arial, sans-serif" font-size="19" font-weight="600" fill="#202124">Reminder</text>
+<text x="917.5" y="204" text-anchor="middle" font-family="Arial, sans-serif" font-size="19" font-weight="600" fill="#202124">draft messages</text>
+<text x="550" y="325" text-anchor="middle" font-family="Arial, sans-serif" font-size="19" fill="#5F6368">The coordinator delegates only when specialization adds value</text>
+<text x="550" y="372" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#80868B">Family Activity Agent • Course MVP</text>
+</svg>
