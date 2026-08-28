@@ -1,0 +1,32 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "family-activity-mcp"
+version = "0.1.0"
+description = "Deep Agent and MCP tool server for a shared family activity calendar"
+requires-python = ">=3.11"
+dependencies = [
+  "deepagents>=0.6,<1",
+  "langchain-mcp-adapters>=0.3,<1",
+  "langchain-groq>=1,<2",
+  "langsmith>=0.4,<1",
+  "mcp>=1.28,<2",
+  "pydantic>=2.7,<3",
+  "python-dotenv>=1,<2",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<9"]
+
+[project.scripts]
+family-activity-mcp = "family_activity_mcp.server:main"
+family-activity-agent = "family_activity_agent.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/family_activity_mcp", "src/family_activity_agent"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

@@ -1,0 +1,106 @@
+[
+  {
+    "id": "create-future-event",
+    "prompt": "Add Leo's soccer practice tomorrow from 4 to 5 PM for family-1",
+    "expected_tools": ["check_conflicts", "create_event"],
+    "approval": "required before create_event",
+    "expected_outcome": "One future timezone-aware event is created after approval."
+  },
+  {
+    "id": "reject-past-event",
+    "prompt": "Add Leo's soccer practice yesterday from 4 to 5 PM for family-1",
+    "expected_tools": [],
+    "approval": "none",
+    "expected_outcome": "The request is rejected because event start time is in the past.",
+    "failure_path": true
+  },
+  {
+    "id": "list-child-events",
+    "prompt": "Show Leo's activities today for family-1",
+    "expected_tools": ["list_events"],
+    "approval": "none",
+    "expected_outcome": "Only active events for Leo in the requested time range are shown."
+  },
+  {
+    "id": "same-child-conflict",
+    "prompt": "Add Leo's piano lesson during his existing soccer practice for family-1",
+    "expected_tools": ["check_conflicts"],
+    "approval": "none when conflict is found",
+    "expected_outcome": "The overlapping same-child event is rejected and explained.",
+    "failure_path": true
+  },
+  {
+    "id": "different-children-overlap",
+    "prompt": "Add child-2's music lesson at the same time as Leo's soccer practice for family-1",
+    "expected_tools": ["check_conflicts", "create_event"],
+    "approval": "required before create_event",
+    "expected_outcome": "The event is allowed when neither event has the same assigned parent."
+  },
+  {
+    "id": "same-parent-conflict",
+    "prompt": "Assign two overlapping activities to parent-1 in family-1",
+    "expected_tools": ["list_events", "check_conflicts"],
+    "approval": "none when conflict is found",
+    "expected_outcome": "The proposed parent conflict is reported and no update occurs.",
+    "failure_path": true
+  },
+  {
+    "id": "soft-delete-event",
+    "prompt": "Delete Leo's soccer practice today for family-1",
+    "expected_tools": ["list_events", "delete_event"],
+    "approval": "required before delete_event",
+    "expected_outcome": "The matched event is soft-deleted and pending reminders are cancelled."
+  },
+  {
+    "id": "restore-event",
+    "prompt": "Restore Leo's deleted soccer practice for today in family-1",
+    "expected_tools": ["list_events", "restore_event"],
+    "approval": "required before restore_event",
+    "expected_outcome": "The exact deleted event is restored after approval."
+  },
+  {
+    "id": "draft-both-parent-reminder",
+    "prompt": "Draft a day-of reminder at 8 AM for both parents for Leo's next practice in family-1",
+    "expected_tools": ["list_events", "schedule_day_of_reminders"],
+    "approval": "required before schedule_day_of_reminders",
+    "expected_outcome": "Two reminder drafts with message_body are stored; no SMS delivery is claimed."
+  },
+  {
+    "id": "reject-past-reminder",
+    "prompt": "Draft an 8 AM reminder for an event today after 8 AM has passed in family-1",
+    "expected_tools": ["list_events"],
+    "approval": "none",
+    "expected_outcome": "The past reminder time is rejected and no draft is stored.",
+    "failure_path": true
+  },
+  {
+    "id": "ambiguous-event",
+    "prompt": "Delete soccer practice for family-1",
+    "expected_tools": ["list_events"],
+    "approval": "none while multiple candidates remain",
+    "expected_outcome": "Candidates are returned and the agent asks the parent to choose."
+  },
+  {
+    "id": "approval-rejected",
+    "prompt": "Move Leo's practice to 6 PM for family-1",
+    "expected_tools": ["list_events", "check_conflicts", "update_event"],
+    "approval": "user rejects update_event",
+    "expected_outcome": "The event remains unchanged and rejection is acknowledged.",
+    "failure_path": true
+  },
+  {
+    "id": "family-isolation",
+    "prompt": "Show all activities in family-2",
+    "expected_tools": ["list_events"],
+    "approval": "none",
+    "expected_outcome": "No family-1 records are returned."
+  },
+  {
+    "id": "provider-rate-limit",
+    "prompt": "Show today's activities for family-1 while Groq returns HTTP 429",
+    "expected_tools": [],
+    "approval": "none",
+    "expected_outcome": "A concise retry message is shown without a Python traceback or success claim.",
+    "failure_path": true
+  }
+]
