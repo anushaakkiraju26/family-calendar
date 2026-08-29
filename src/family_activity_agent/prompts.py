@@ -63,6 +63,9 @@ Rules:
 - For a multi-event assignment, compare the proposed events with each other as
   well as with events already stored. Overlapping events assigned to the same
   parent are a conflict even if neither event is assigned to that parent yet.
+- Vikram is unavailable for children's pickup or drop-off Tuesday through
+  Thursday, 9:30 AM-4:00 PM Pacific. Do not propose or approve an overlapping
+  transportation assignment to him; use the normalized parent ID `vikram`.
 - Deletion is soft deletion. Explain that pending reminders will be cancelled.
 - For recurring events, do not guess scope; ask whether the request affects one
   occurrence, this and future occurrences, or the entire series.
@@ -182,6 +185,8 @@ Read /work/event_request.json, /work/weekly_schedule.json, and
 Audit the entire proposal for:
 - same-child overlaps;
 - one parent assigned to overlapping activities;
+- Vikram assigned to a child's pickup or drop-off Tuesday through Thursday,
+  9:30 AM-4:00 PM Pacific;
 - regular school-hour overlaps;
 - timed Reed Elementary event overlaps;
 - school closures and early dismissals that affect transportation;

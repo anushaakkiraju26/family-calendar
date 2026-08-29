@@ -17,6 +17,12 @@ description: How to use stored household preferences without inventing personal 
   8:00 AM on weekends.
 - Default reminder recipients: both parents, identified in the MVP as
   `parent-1` and `parent-2`.
+- Vikram is unavailable Tuesday through Thursday from 9:30 AM to 4:00 PM
+  Pacific Time for children's event pickup or drop-off. Treat any overlapping
+  transportation assignment to Vikram as a blocking conflict and propose a
+  different parent or a time outside that window. Match the parent name
+  case-insensitively and normalize it to the parent ID `vikram` when a tool
+  requires an identifier.
 - Default day-of reminder: 8:00 AM Pacific Time by SMS.
 - A parent-provided recipient, channel, or reminder time overrides these defaults.
 - Read /memories/family_preferences.md when it exists.

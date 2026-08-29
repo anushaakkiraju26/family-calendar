@@ -25,6 +25,8 @@ def test_file_writing_prompts_include_required_tool_arguments():
 def test_coordinator_has_family_time_defaults():
     assert "America/Los_Angeles" in COORDINATOR_PROMPT
     assert "9:00 AM to 3:00 PM" in COORDINATOR_PROMPT
+    assert "Vikram is unavailable" in COORDINATOR_PROMPT
+    assert "9:30 AM-4:00 PM" in COORDINATOR_PROMPT
 
 
 def test_coordinator_requires_deep_weekly_workflow_and_review_loop():
@@ -42,3 +44,4 @@ def test_weekly_planner_and_reviewer_use_school_calendar():
     assert "/work/weekly_schedule.json" in WEEKLY_PLANNER_PROMPT
     assert "/reviews/weekly_schedule_review.json" in SCHEDULE_REVIEWER_PROMPT
     assert "same-child overlaps" in SCHEDULE_REVIEWER_PROMPT
+    assert "Vikram assigned" in SCHEDULE_REVIEWER_PROMPT
