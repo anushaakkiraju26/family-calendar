@@ -21,7 +21,10 @@ RUN_ARTIFACTS = (
     "work/event_request.json",
     "work/calendar_plan.json",
     "work/reminder_plan.json",
+    "work/weekly_schedule.json",
+    "work/assignment_proposal.json",
     "reviews/conflict_report.json",
+    "reviews/weekly_schedule_review.json",
     "final/completed_action.json",
 )
 

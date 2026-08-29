@@ -196,7 +196,7 @@ def build_docx():
 
     doc.add_heading("3. Agent One-Liner", level=1)
     doc.add_paragraph(
-        "My agent helps parents coordinate family activities in a CLI-backed shared calendar, replacing scattered messages and manual cross-checking. It autonomously resolves requests, reads calendar state, checks conflicts, and drafts reminders using 10 MCP tools; it hands off to a parent before every create, update, delete, restore, or reminder change, and succeeds when a parent can complete a calendar task in under two minutes with no unapproved writes."
+        "My agent helps parents coordinate family activities in a CLI-backed shared calendar, replacing scattered messages and manual cross-checking. It autonomously resolves requests, reads family and school-calendar state, reviews weekly plans, checks conflicts, and drafts reminders using 12 MCP tools; it hands off to a parent before every create, update, delete, restore, or reminder change, and succeeds when a parent can complete a calendar task in under two minutes with no unapproved writes."
     )
 
     doc.add_heading("4. Scope", level=1)
@@ -258,6 +258,8 @@ SQLite: events + reminders + audit_logs""")
         ["Intake Agent", "Normalizes ambiguous or multi-activity requests.", "Temporary event_request.json"],
         ["Calendar Agent", "Handles complex searches and event lifecycle operations.", "Calendar tools + calendar policy"],
         ["Conflict Agent", "Explains child and parent overlaps without mutating state.", "check_conflicts"],
+        ["Weekly Planner", "Combines family events, Reed school dates, and proposed parent assignments.", "Read-only calendar and school tools"],
+        ["Schedule Reviewer", "Audits a weekly plan and requires revision when blocking issues remain.", "Shared plan and review artifacts"],
         ["Reminder Agent", "Resolves events and creates reviewable reminder drafts.", "Reminder tools + reminder policy"],
     ], [1.35, 3.15, 2.0])
 
@@ -269,6 +271,8 @@ SQLite: events + reminders + audit_logs""")
         ["delete_event", "Write", "Soft-delete and cancel scheduled reminders.", "Required"],
         ["restore_event", "Write", "Restore a soft-deleted event.", "Required"],
         ["check_conflicts", "Read", "Explain overlapping child/parent activities.", "No"],
+        ["list_school_events", "Read", "List Reed Elementary dates in a range.", "No"],
+        ["check_school_conflicts", "Read", "Check school hours, closures, early dismissal, and timed events.", "No"],
         ["schedule_reminder", "Write", "Store one reminder draft.", "Required"],
         ["schedule_day_of_reminders", "Write", "Atomically store drafts for both parents.", "Required"],
         ["list_reminders", "Read", "Review reminder drafts and statuses.", "No"],
@@ -323,7 +327,7 @@ WRITE REQUEST → proposed tool call → PENDING APPROVAL
         "Create/list/update/delete/restore lifecycle and family isolation.",
         "Past-event, conflict, reminder, version, and idempotency failure paths.",
         "CLI rate-limit, timeout, connection, database, and unknown-error formatting.",
-        "Fourteen natural-language evaluation cases with expected tools and outcomes.",
+        "Seventeen natural-language evaluation cases with expected tools and outcomes.",
     ])
 
     doc.add_heading("14. Configuration and Runbook", level=1)
@@ -352,7 +356,7 @@ family-activity-agent 'Show activities today for family-1'""")
 
     doc.add_heading("16. Demo Script (5 Minutes or Less)", level=1)
     add_numbered(doc, [
-        "Show the architecture and identify the coordinator, four subagents, MCP server, and SQLite state.",
+        "Show the architecture and identify the coordinator, six subagents, MCP server, school calendar, and SQLite state.",
         "Create a future event and pause at the create_event approval prompt; approve it.",
         "List the event to prove persistence in a separate CLI command.",
         "Create a different child's overlapping event to show that it is allowed.",
@@ -422,9 +426,9 @@ Parent request → Family Coordinator (plans, routes, verifies)
 | Deep Agents concept | Family activity implementation |
 |---|---|
 | Planning | `write_todos` breaks a parent request into steps |
-| Delegation | `task` sends focused work to four specialists |
+| Delegation | `task` sends focused work to six specialists |
 | Shared work | Temporary files coordinate one run |
-| Tools | A standalone MCP server exposes ten typed calendar operations |
+| Tools | A standalone MCP server exposes twelve typed family and school-calendar operations |
 | Skills | Calendar policy, reminder policy, and family preferences load on demand |
 | Durable state | SQLite stores events, assignments, reminders, and audit history |
 | Human-in-the-loop | LangGraph interrupts before every mutation |
@@ -517,6 +521,8 @@ subagents = {
     "intake-agent": "Normalizes ambiguous or multi-activity requests",
     "calendar-agent": "Handles complex event lifecycle operations",
     "conflict-agent": "Explains overlaps without mutating state",
+    "weekly-planner": "Builds and revises coordinated weekly plans",
+    "schedule-reviewer": "Independently audits the full weekly proposal",
     "reminder-agent": "Creates and manages reminder drafts",
 }
 for name, purpose in subagents.items():
@@ -574,7 +580,10 @@ for relative_path in [
     "work/event_request.json",
     "work/calendar_plan.json",
     "work/reminder_plan.json",
+    "work/weekly_schedule.json",
+    "work/assignment_proposal.json",
     "reviews/conflict_report.json",
+    "reviews/weekly_schedule_review.json",
     "final/completed_action.json",
 ]:
     path = Path(relative_path)
@@ -620,13 +629,40 @@ verify_result = asyncio.run(agent.ainvoke(
 ))
 verify_result["messages"][-1].pretty_print()
 """),
+        md("""## 11. Deep weekly coordination + school calendar
+
+This is the workflow that makes the project visibly more agentic than a tool router. A weekly request requires several isolated specialists and shared artifacts:
+
+1. **Intake Agent** normalizes the week and family goal.
+2. **Weekly Planner** calls `list_events`, `list_school_events`, `check_conflicts`, and `check_school_conflicts`.
+3. **Schedule Reviewer** audits the whole proposal—not one event at a time.
+4. A rejected review loops back to the planner for revision and another review.
+5. **Reminder Agent** drafts reminders only after review approval.
+6. Proposed writes are emitted together so the parent sees one grouped approval set.
+
+The school source is the supplied Reed Elementary 2026–2027 calendar. Its dates are subject to change, so this is reviewed project data rather than a live school feed."""),
+        code("""import json
+
+school_calendar = json.loads(
+    Path("data/reed_elementary_2026_2027.json").read_text()
+)
+print(school_calendar["school"], school_calendar["school_year"])
+print("Transcribed events:", len(school_calendar["events"]))
+
+weekly_prompt = (
+    "Coordinate next week for family-1, identify family and school conflicts, "
+    "propose parent assignments, and draft day-of reminders."
+)
+print("\\nTry this deep workflow in the CLI:\\n", weekly_prompt)
+"""),
         md("""## Recap
 
 You built a family activity system that demonstrates the course's core agentic requirements:
 
 - A **Deep Agent coordinator** that routes and delegates.
-- Four **specialist subagents** with focused prompts and tools.
-- Ten typed **MCP tools** backed by SQLite.
+- Six **specialist subagents**, including a weekly planner and independent reviewer.
+- Twelve typed **MCP tools** backed by SQLite and the supplied school calendar.
+- A **review/revision loop** with shared weekly-plan artifacts.
 - **Human approval** before every write.
 - **Deterministic Python safeguards** for past times, conflicts, versions, family scope, and idempotency.
 - **Draft-only reminders** with no external messaging side effects.

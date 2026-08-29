@@ -3,5 +3,8 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 data/*.db
+work/
+reviews/
+final/
 .env
 .DS_Store

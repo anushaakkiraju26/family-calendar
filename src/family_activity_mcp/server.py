@@ -1,7 +1,7 @@
 import argparse
 import json
 import os
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -9,6 +9,10 @@ from mcp.server.fastmcp import FastMCP
 
 from .models import EventChanges, EventCreate
 from .repository import CalendarRepository
+from .school_calendar import (
+    check_school_conflicts as find_school_conflicts,
+    list_school_events as find_school_events,
+)
 
 DEFAULT_DB = Path(__file__).resolve().parents[2] / "data" / "family_activity.db"
 repository = CalendarRepository(os.getenv("FAMILY_ACTIVITY_DB", str(DEFAULT_DB)))
@@ -104,6 +108,18 @@ def check_conflicts(
         family_id, start_at, end_at, child_id,
         assigned_parent_id, exclude_event_id
     ))
+
+
+@mcp.tool()
+def list_school_events(start_date: date, end_date: date) -> str:
+    """List Reed Elementary events, closures, and early-dismissal dates."""
+    return output(find_school_events(start_date, end_date))
+
+
+@mcp.tool()
+def check_school_conflicts(start_at: datetime, end_at: datetime) -> str:
+    """Check a proposed activity against school hours and the school calendar."""
+    return output(find_school_conflicts(start_at, end_at))
 
 
 @mcp.tool()

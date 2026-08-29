@@ -22,6 +22,8 @@ from .prompts import (
     COORDINATOR_PROMPT,
     INTAKE_PROMPT,
     REMINDER_PROMPT,
+    SCHEDULE_REVIEWER_PROMPT,
+    WEEKLY_PLANNER_PROMPT,
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -100,8 +102,15 @@ async def build_family_agent(model: Any | None = None):
     calendar_tools = select_tools(
         tools, "create_event", "list_events", "update_event",
         "delete_event", "restore_event", "check_conflicts",
+        "list_school_events", "check_school_conflicts",
     )
-    conflict_tools = select_tools(tools, "check_conflicts")
+    conflict_tools = select_tools(
+        tools, "check_conflicts", "check_school_conflicts"
+    )
+    weekly_planning_tools = select_tools(
+        tools, "list_events", "check_conflicts", "list_school_events",
+        "check_school_conflicts",
+    )
     reminder_tools = select_tools(
         tools, "list_events", "list_reminders", "schedule_reminder",
         "schedule_day_of_reminders", "cancel_reminders"
@@ -145,9 +154,32 @@ async def build_family_agent(model: Any | None = None):
         },
         {
             "name": "conflict-agent",
-            "description": "Checks a proposed time for child or parent schedule overlaps.",
+            "description": (
+                "Checks a proposed time for child, parent, school-hour, or "
+                "dated school-calendar conflicts."
+            ),
             "system_prompt": CONFLICT_PROMPT,
             "tools": conflict_tools,
+        },
+        {
+            "name": "weekly-planner",
+            "description": (
+                "Builds or revises a complete weekly family plan using family "
+                "events, Reed Elementary dates, conflicts, and parent assignments."
+            ),
+            "system_prompt": WEEKLY_PLANNER_PROMPT,
+            "tools": weekly_planning_tools,
+            "skills": [skills_path],
+        },
+        {
+            "name": "schedule-reviewer",
+            "description": (
+                "Independently reviews a weekly plan and requires revision when "
+                "conflicts, missing details, or unsafe times remain."
+            ),
+            "system_prompt": SCHEDULE_REVIEWER_PROMPT,
+            "tools": [],
+            "skills": [skills_path],
         },
         {
             "name": "reminder-agent",

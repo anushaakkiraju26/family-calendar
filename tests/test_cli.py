@@ -33,6 +33,8 @@ def test_async_timeout_is_handled():
 
 
 def test_clear_run_artifacts_removes_only_known_ephemeral_files(tmp_path):
+    assert "work/weekly_schedule.json" in RUN_ARTIFACTS
+    assert "reviews/weekly_schedule_review.json" in RUN_ARTIFACTS
     for relative_path in RUN_ARTIFACTS:
         artifact = tmp_path / relative_path
         artifact.parent.mkdir(parents=True, exist_ok=True)

@@ -102,5 +102,27 @@
     "approval": "none",
     "expected_outcome": "A concise retry message is shown without a Python traceback or success claim.",
     "failure_path": true
+  },
+  {
+    "id": "weekly-deep-planning",
+    "prompt": "Coordinate next week for family-1, identify conflicts, propose parent assignments, and draft day-of reminders.",
+    "expected_tools": ["list_events", "list_school_events", "check_conflicts", "check_school_conflicts"],
+    "approval": "one grouped review before proposed calendar and reminder mutations",
+    "expected_outcome": "The coordinator delegates to intake, weekly planner, schedule reviewer, and reminder specialist; shared artifacts contain a reviewed weekly plan."
+  },
+  {
+    "id": "school-event-overlap",
+    "prompt": "Schedule an activity from 5:15 to 5:45 PM on May 18, 2027 for family-1.",
+    "expected_tools": ["check_conflicts", "check_school_conflicts"],
+    "approval": "none while conflicts remain",
+    "expected_outcome": "The agent reports overlaps with both the Reed Elementary Art Show and Open House before proposing a write.",
+    "failure_path": true
+  },
+  {
+    "id": "school-early-dismissal",
+    "prompt": "Plan transportation for family-1 on the last day of school, May 27, 2027.",
+    "expected_tools": ["list_school_events", "check_school_conflicts"],
+    "approval": "none for planning-only review",
+    "expected_outcome": "The plan highlights the 1:01 PM early dismissal and requests or proposes supervision coverage."
   }
 ]

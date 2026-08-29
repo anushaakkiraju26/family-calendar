@@ -8,7 +8,9 @@ server for a shared family calendar.
 - Family Coordinator plans work and delegates through task
 - Intake Agent normalizes parent requests into shared JSON state
 - Calendar Agent manages event creation, updates, deletion, and restoration
-- Conflict Agent checks child and assigned-parent overlaps
+- Conflict Agent checks child, assigned-parent, school-hour, and dated school-calendar overlaps
+- Weekly Planner combines family events, school dates, and parent assignments
+- Schedule Reviewer audits the whole weekly plan and requests revision when needed
 - Reminder Agent schedules and cancels reminders
 - Human approval protects all calendar and reminder mutations
 
@@ -28,6 +30,43 @@ planning, review, and completion JSON artifacts from the previous run. This
 prevents stale agent files from influencing a new request; it never clears the
 SQLite calendar database.
 
+## Deep weekly coordination workflow
+
+Simple single-event requests retain a low-latency direct-tool path. A request
+to coordinate or review a whole week uses the full multi-agent workflow:
+
+1. Intake Agent normalizes the goal and date range.
+2. Weekly Planner loads family events and the Reed Elementary calendar.
+3. Conflict checks cover children, assigned parents, regular school hours,
+   timed school events, closures, and early dismissals.
+4. Schedule Reviewer audits the complete proposal.
+5. A plan with blocking findings returns to the Weekly Planner for revision and
+   is reviewed again.
+6. Reminder Agent drafts day-of reminder records for an approved proposal.
+7. Proposed mutations are presented together for human review. Independent
+   tool calls are emitted together so LangGraph can show a grouped approval set.
+
+Shared artifacts for this workflow are `/work/weekly_schedule.json`,
+`/work/assignment_proposal.json`, `/reviews/weekly_schedule_review.json`, and
+`/work/reminder_plan.json`. These files coordinate the run; SQLite remains the
+durable source of truth.
+
+Example:
+
+    family-activity-agent "Coordinate next week for family-1, identify conflicts, propose parent assignments, and draft day-of reminders"
+
+## School calendar
+
+`data/reed_elementary_2026_2027.json` is a reviewed transcription of the
+attached Reed Elementary School 2026–2027 calendar. The original calendar says
+all dates are subject to change. The agent therefore identifies this file as
+its source and does not describe it as live school data.
+
+The school-calendar tools are read-only:
+
+- `list_school_events`
+- `check_school_conflicts`
+
 ## Tools
 
 - create_event
@@ -36,6 +75,8 @@ SQLite calendar database.
 - delete_event (soft deletion)
 - restore_event
 - check_conflicts
+- list_school_events
+- check_school_conflicts
 - schedule_reminder
 - schedule_day_of_reminders
 - list_reminders
