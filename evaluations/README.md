@@ -18,3 +18,7 @@ the actual Deep Agent, LangGraph interrupt, MCP subprocess, and SQLite layers.
 Before recording the demo, run selected prompts from `cases.json` with the live
 Nebius-backed CLI and record observed tool calls and outcomes in the project
 documentation. Live model behavior is intentionally not part of CI.
+
+The family-outing case additionally requires `YDC_API_KEY`. It verifies that
+calendar and school checks happen before one `you-search` MCP call, that results
+retain source URLs, and that research never creates an event automatically.

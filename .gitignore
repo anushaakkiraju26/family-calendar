@@ -6,5 +6,7 @@ data/*.db
 work/
 reviews/
 final/
+large_tool_results/
+frontend/
 .env
 .DS_Store

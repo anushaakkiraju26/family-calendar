@@ -11,6 +11,7 @@ server for a shared family calendar.
 - Conflict Agent checks child, assigned-parent, school-hour, and dated school-calendar overlaps
 - Weekly Planner combines family events, school dates, and parent assignments
 - Transportation Agent generates and ranks parent, pickup, and drop-off options
+- Family Outing Agent finds and ranks cited places for weekends and school breaks
 - Schedule Reviewer audits the whole weekly plan and requests revision when needed
 - Reminder Agent schedules and cancels reminders
 - Human approval protects all calendar and reminder mutations
@@ -87,6 +88,47 @@ parent availability rules, event overlaps, pickup/drop-off requirements, and a
 it does not invent their scores. Selecting an old option after an event changes
 fails through the existing `expected_version` guard.
 
+## Family outing research
+
+The Family Outing Agent first checks the family and Reed Elementary calendars,
+then uses You.com's hosted MCP server to find current places and events for an
+available weekend or school-break window. Search results retain their source
+URLs. They remain proposals: the parent must verify hours,
+prices, tickets, suitability, and travel time. Selecting an outing does not add
+it to the calendar; a separate `create_event` call still requires approval.
+Third-party pages may be used for discovery, but each final option must cite an
+official venue, park-agency, or government page retrieved with `you-contents`.
+The agent does not claim a numeric drive time without current mapping evidence.
+Although the hosted connection exposes seven You.com tools, the outing
+specialist receives only the controlled `research_family_outings` wrapper. The
+wrapper checks both calendars and uses `you-search` plus `you-contents`; the
+remaining hosted tools are not exposed to the specialist.
+
+Example:
+
+    family-activity-agent "Find three science or outdoor activities near San Jose for family-1 this weekend. Check our calendar first and stay within a 45-minute drive."
+
+## Seeded month and Kinday frontend
+
+Populate the local `family-1` SQLite calendar with the idempotent 21-event demo
+month used for scheduling and transportation tests:
+
+    python tools/seed_month_demo.py --database data/family_activity.db --start 2026-08-29
+
+The generated range is August 30 through September 29, 2026. It includes
+recurring practices, simultaneous activities for two children, school-hour
+appointments, parent assignments, and pickup/drop-off requirements. Re-running
+the command does not create duplicates.
+
+The separate Kinday frontend repository is developed from `frontend/` and the
+private hosted calendar is available at:
+
+    https://kinday-family-planner.anusha-akkiraj319688.chatgpt.site
+
+The hosted UI currently contains a snapshot of the seeded SQLite records; it is
+not a live synchronization layer. Local calendar mutations remain authoritative
+in `data/family_activity.db`.
+
 ## School calendar
 
 `data/reed_elementary_2026_2027.json` is a reviewed transcription of the
@@ -114,6 +156,14 @@ The school-calendar tools are read-only:
 - check_transportation_conflicts
 - generate_schedule_candidates
 - review_schedule_candidate
+- check_outing_time_window
+- you-search (hosted You.com MCP)
+- you-contents (hosted You.com MCP)
+- you-research (hosted You.com MCP)
+- you-answer (hosted You.com MCP)
+- you-finance (hosted You.com MCP)
+- you-balance (hosted You.com MCP)
+- you-discover (hosted You.com MCP)
 - schedule_reminder
 - schedule_day_of_reminders
 - list_reminders
@@ -136,11 +186,14 @@ of model reasoning.
     pip install -e '.[dev]'
     pytest
 
-Copy `.env.example` to `.env` and add a Nebius Token Factory API key.
+Copy `.env.example` to `.env` and add a Nebius Token Factory API key. Add a
+You.com API key only when you want live family-outing research.
 
     NEBIUS_API_KEY=your-nebius-key
     NEBIUS_BASE_URL=https://api.tokenfactory.us-central1.nebius.com/v1/
     FAMILY_ACTIVITY_MODEL=nvidia/Nemotron-3-Nano-Omni
+    YDC_API_KEY=your-you-com-key
+    YDC_MCP_URL=https://api.you.com/mcp?tools=you-search,you-contents,you-research,you-answer,you-finance,you-balance,you-discover
 
 ## Run the Deep Agent
 

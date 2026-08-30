@@ -232,6 +232,25 @@ def review_schedule_candidate(family_id: str, candidate: dict[str, Any]) -> str:
 
 
 @mcp.tool()
+def check_outing_time_window(
+    family_id: str, start_at: datetime, end_at: datetime,
+) -> str:
+    """Check an outing window against family and school-calendar commitments."""
+    if end_at <= start_at:
+        raise ValueError("end_at must be later than start_at")
+    family_conflicts = repository.check_conflicts(
+        family_id, start_at, end_at
+    )
+    school_conflicts = find_school_conflicts(start_at, end_at)
+    return output({
+        "available": not family_conflicts and not school_conflicts,
+        "family_conflicts": family_conflicts,
+        "school_conflicts": school_conflicts,
+        "verification_required": True,
+    })
+
+
+@mcp.tool()
 def schedule_reminder(
     family_id: str, event_id: str, recipient_id: str, send_at: datetime,
     message_body: str, channel: str = "sms",

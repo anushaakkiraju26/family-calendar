@@ -147,5 +147,12 @@
     "approval": "none for stale plan",
     "expected_outcome": "The event version mismatch causes the option to be regenerated instead of applied.",
     "failure_path": true
+  },
+  {
+    "id": "family-outing-weekend",
+    "prompt": "Find three science or outdoor activities near San Jose for family-1 this weekend. Check our calendar first and stay within a 45-minute drive. Do not add anything to the calendar.",
+    "expected_tools": ["list_events", "list_school_events", "check_outing_time_window", "you-search"],
+    "approval": "none; outing research is read-only",
+    "expected_outcome": "The Family Outing Agent identifies a free window, returns ranked ideas with source URLs and verification warnings, and makes no calendar change."
   }
 ]

@@ -196,7 +196,7 @@ def build_docx():
 
     doc.add_heading("3. Agent One-Liner", level=1)
     doc.add_paragraph(
-        "My agent helps parents coordinate family activities in a CLI-backed shared calendar, replacing scattered messages and manual cross-checking. It autonomously resolves requests, reads family and school-calendar state, generates ranked transportation-aware weekly options, reviews plans, checks conflicts, and drafts reminders using 17 MCP tools; it hands off to a parent before every create, update, delete, restore, or reminder change, and succeeds when a parent can complete a calendar task with no unapproved writes."
+        "My agent helps parents coordinate family activities and discover cited family outings through a CLI-backed shared calendar. It autonomously reads family and school-calendar state, generates ranked transportation-aware weekly options, searches current web evidence for free weekends and school breaks, reviews plans, checks conflicts, and drafts reminders using 25 MCP tools across a local family server and hosted You.com server; it hands off to a parent before every calendar or reminder change."
     )
 
     doc.add_heading("4. Scope", level=1)
@@ -214,7 +214,7 @@ def build_docx():
     doc.add_heading("Out of scope", level=2)
     add_bullets(doc, [
         "Actual SMS delivery through Twilio or another messaging provider.",
-        "A web or mobile frontend; the course MVP uses a CLI.",
+        "Live synchronization between the separate Kinday frontend snapshot and SQLite.",
         "Authentication, production tenant identity, and phone-number management.",
         "Calendar synchronization with Google Calendar or Apple Calendar.",
         "Recurring-event series editing and live traffic-aware route optimization.",
@@ -231,6 +231,7 @@ Family Coordinator (Deep Agents + LangGraph)
     ├── Conflict Agent ─── overlap analysis
     ├── Weekly Planner ─── weekly context
     ├── Transportation ─── ranked assignment candidates
+    ├── Family Outing ──── cited weekend and school-break ideas
     ├── Schedule Reviewer  independent review
     └── Reminder Agent ─── reminder drafts
               │
@@ -239,7 +240,8 @@ Family Coordinator (Deep Agents + LangGraph)
               │
        ┌──────┴────────┐
        ▼               ▼
-CalendarRepository   17 typed tools
+CalendarRepository   18 local tools
+You.com MCP Server    7 hosted tools
        │
        ▼
 SQLite: events + reminders + availability_rules + audit_logs""")
@@ -263,6 +265,7 @@ SQLite: events + reminders + availability_rules + audit_logs""")
         ["Conflict Agent", "Explains child and parent overlaps without mutating state.", "check_conflicts"],
         ["Weekly Planner", "Combines family events, Reed school dates, and proposed parent assignments.", "Read-only calendar and school tools"],
         ["Transportation Agent", "Generates ranked assignment and pickup/drop-off candidates.", "Availability, transportation, and candidate tools"],
+        ["Family Outing Agent", "Checks free time, searches current sources, and ranks outing ideas.", "Calendar, school, and You.com tools"],
         ["Schedule Reviewer", "Audits a weekly plan and requires revision when blocking issues remain.", "Shared plan and review artifacts"],
         ["Reminder Agent", "Resolves events and creates reviewable reminder drafts.", "Reminder tools + reminder policy"],
     ], [1.35, 3.15, 2.0])
@@ -282,6 +285,14 @@ SQLite: events + reminders + availability_rules + audit_logs""")
         ["check_transportation_conflicts", "Read", "Check coverage, overlaps, and travel buffers.", "No"],
         ["generate_schedule_candidates", "Read", "Generate and rank versioned weekly assignment options.", "No"],
         ["review_schedule_candidate", "Read", "Deterministically review dates, versions, assignments, and school overlaps.", "No"],
+        ["check_outing_time_window", "Read", "Check an outing window against family and school commitments.", "No"],
+        ["you-search", "Read / hosted", "Search current web and news results.", "No"],
+        ["you-contents", "Read / hosted", "Extract page content from selected URLs.", "No"],
+        ["you-research", "Read / hosted", "Run deeper citation-backed multi-source research.", "No"],
+        ["you-answer", "Read / hosted", "Return a concise cited answer.", "No"],
+        ["you-finance", "Read / hosted", "Research finance topics when explicitly relevant.", "No"],
+        ["you-balance", "Read / hosted", "Check remaining You.com API credits.", "No"],
+        ["you-discover", "Read / hosted", "Find an appropriate You.com integration path.", "No"],
         ["schedule_reminder", "Write", "Store one reminder draft.", "Required"],
         ["schedule_day_of_reminders", "Write", "Atomically store drafts for both parents.", "Required"],
         ["list_reminders", "Read", "Review reminder drafts and statuses.", "No"],
@@ -336,7 +347,7 @@ WRITE REQUEST → proposed tool call → PENDING APPROVAL
         "Create/list/update/delete/restore lifecycle and family isolation.",
         "Past-event, conflict, reminder, version, and idempotency failure paths.",
         "CLI rate-limit, timeout, connection, database, and unknown-error formatting.",
-        "Seventeen natural-language evaluation cases with expected tools and outcomes.",
+        "Twenty-one natural-language evaluation cases with expected tools and outcomes.",
     ])
 
     doc.add_heading("14. Configuration and Runbook", level=1)
@@ -365,7 +376,7 @@ family-activity-agent 'Show activities today for family-1'""")
 
     doc.add_heading("16. Demo Script (5 Minutes or Less)", level=1)
     add_numbered(doc, [
-        "Show the architecture and identify the coordinator, seven subagents, MCP server, school calendar, and SQLite state.",
+        "Show the architecture and identify the coordinator, eight subagents, MCP server, You.com boundary, school calendar, and SQLite state.",
         "Create a future event and pause at the create_event approval prompt; approve it.",
         "List the event to prove persistence in a separate CLI command.",
         "Create a different child's overlapping event to show that it is allowed.",
@@ -389,7 +400,7 @@ family-activity-agent 'Show activities today for family-1'""")
     add_code_block(doc, """UNDERSTAND REQUEST → READ CALENDAR → CHECK POLICY/CONFLICTS
 → HUMAN APPROVAL FOR WRITE → MCP MUTATION → SQLITE + AUDIT LOG
 → VERIFIED RESPONSE → STOP""")
-    doc.add_paragraph("The MVP stops after saving calendar state or reminder drafts. It does not send messages or perform external commitments. Future extensions include Twilio delivery, authenticated family membership, a shared calendar frontend, Google/Apple Calendar synchronization, recurring events, production PostgreSQL, and hosted deployment.")
+    doc.add_paragraph("The MVP stops after saving calendar state or reminder drafts. It does not send messages or perform external commitments. A separate hosted Kinday frontend displays a snapshot of the seeded family calendar, but it does not synchronize live with SQLite. Future extensions include Twilio delivery, authenticated family membership, live Kinday synchronization, Google/Apple Calendar synchronization, recurring events, and production PostgreSQL.")
 
     doc.core_properties.title = "Family Activity Deep Agent — Week 3 Project Documentation"
     doc.core_properties.subject = "Agentic AI Systems course project"
@@ -421,11 +432,11 @@ This notebook follows the same teaching sequence as the course's GTM Deep Agent 
 ```
 Parent request → Family Coordinator (plans, routes, verifies)
                          │
-          ┌──────────────┼──────────────┐
-          ▼              ▼              ▼
-       Intake         Calendar       Conflict        Reminder
-       Agent           Agent          Agent           Agent
-          └──────────────┴──────┬───────┴──────────────┘
+          ┌──────────────┼─────────────────────┐
+          ▼              ▼                     ▼
+     Calendar work   Weekly planning      Outing research
+     + reminders     + review             + cited evidence
+          └──────────────┴──────────┬──────────┘
                                 ▼
                       Family Activity MCP Server
                                 ▼
@@ -435,9 +446,9 @@ Parent request → Family Coordinator (plans, routes, verifies)
 | Deep Agents concept | Family activity implementation |
 |---|---|
 | Planning | `write_todos` breaks a parent request into steps |
-| Delegation | `task` sends focused work to seven specialists |
+| Delegation | `task` sends focused work to eight specialists |
 | Shared work | Temporary files coordinate one run |
-| Tools | A standalone MCP server exposes seventeen typed calendar, school, availability, transportation, review, and reminder operations |
+| Tools | 18 local MCP tools; when configured, 7 hosted You.com tools are discovered |
 | Skills | Calendar policy, reminder policy, and family preferences load on demand |
 | Durable state | SQLite stores events, assignments, reminders, and audit history |
 | Human-in-the-loop | LangGraph interrupts before every mutation |
@@ -458,6 +469,8 @@ from dotenv import load_dotenv
 load_dotenv()
 if not os.getenv("NEBIUS_API_KEY"):
     raise RuntimeError("Add NEBIUS_API_KEY to .env before running the live agent cells.")
+
+print("You.com outing search:", "enabled" if os.getenv("YDC_API_KEY") else "disabled")
 
 if os.getenv("LANGSMITH_API_KEY", "").strip():
     os.environ["LANGSMITH_TRACING"] = "true"
@@ -523,7 +536,7 @@ for artifact in RUN_ARTIFACTS:
 Each specialist has a focused prompt and restricted tool set. The coordinator handles simple requests directly to reduce latency and delegates only when specialization adds value."""),
         md("![Coordinator and specialist agents](./images/05_img.png)\n"),
         code("""from family_activity_agent.prompts import (
-    INTAKE_PROMPT, CALENDAR_PROMPT, CONFLICT_PROMPT, REMINDER_PROMPT
+    INTAKE_PROMPT, CALENDAR_PROMPT, CONFLICT_PROMPT, OUTING_PROMPT, REMINDER_PROMPT
 )
 
 subagents = {
@@ -531,6 +544,8 @@ subagents = {
     "calendar-agent": "Handles complex event lifecycle operations",
     "conflict-agent": "Explains overlaps without mutating state",
     "weekly-planner": "Builds and revises coordinated weekly plans",
+    "transportation-agent": "Ranks assignment and transportation candidates",
+    "family-outing-agent": "Finds cited ideas for free weekends and school breaks",
     "schedule-reviewer": "Independently audits the full weekly proposal",
     "reminder-agent": "Creates and manages reminder drafts",
 }
@@ -591,6 +606,7 @@ for relative_path in [
     "work/reminder_plan.json",
     "work/weekly_schedule.json",
     "work/assignment_proposal.json",
+    "work/outing_proposal.json",
     "reviews/conflict_report.json",
     "reviews/weekly_schedule_review.json",
     "final/completed_action.json",
@@ -638,7 +654,23 @@ verify_result = asyncio.run(agent.ainvoke(
 ))
 verify_result["messages"][-1].pretty_print()
 """),
-        md("""## 11. Deep weekly coordination + school calendar
+        md("""## 11. Family outing research with You.com
+
+The Family Outing Agent checks calendar and school commitments through one
+controlled `research_family_outings` wrapper. The hosted connection discovers
+seven You.com tools, but the specialist receives only the wrapper, which uses
+`you-search` and `you-contents`. The model explains cited results without
+inventing hours, prices, tickets, travel time, or suitability. Search results
+are proposals and never become calendar events without a separate approved
+calendar action."""),
+        code("""outing_prompt = (
+    "Find three science or outdoor activities near San Jose for family-1 this "
+    "weekend. Check our family and school calendars first, stay within a "
+    "45-minute drive, preserve source URLs, and do not add anything to the calendar."
+)
+print("Try this after adding YDC_API_KEY to .env:\\n", outing_prompt)
+"""),
+        md("""## 12. Deep weekly coordination + school calendar
 
 This is the workflow that makes the project visibly more agentic than a tool router. A weekly request requires several isolated specialists and shared artifacts:
 
@@ -666,13 +698,27 @@ weekly_prompt = (
 )
 print("\\nTry this deep workflow in the CLI:\\n", weekly_prompt)
 """),
+        md("""## 13. Seeded month and Kinday calendar
+
+`tools/seed_month_demo.py` idempotently creates 21 realistic `family-1` events
+from August 30 through September 29, 2026. The separate hosted Kinday frontend
+shows a snapshot of those records in month, week, day, and list views. SQLite
+remains authoritative; the hosted snapshot does not update automatically after
+later CLI mutations."""),
+        code("""seed_command = (
+    "python tools/seed_month_demo.py --database data/family_activity.db "
+    "--start 2026-08-29"
+)
+print("Seed the demo month with:\\n", seed_command)
+print("Kinday: https://kinday-family-planner.anusha-akkiraj319688.chatgpt.site")
+"""),
         md("""## Recap
 
 You built a family activity system that demonstrates the course's core agentic requirements:
 
 - A **Deep Agent coordinator** that routes and delegates.
-- Seven **specialist subagents**, including transportation planning and independent review.
-- Seventeen typed **MCP tools** backed by SQLite and the supplied school calendar.
+- Eight **specialist subagents**, including outing research, transportation planning, and independent review.
+- **Eighteen local MCP tools** plus seven discoverable hosted You.com tools; outing research is constrained behind a controlled wrapper.
 - A **review/revision loop** with shared weekly-plan artifacts.
 - **Human approval** before every write.
 - **Deterministic Python safeguards** for past times, conflicts, versions, family scope, availability, transportation, candidate scoring, and idempotency.
@@ -680,7 +726,7 @@ You built a family activity system that demonstrates the course's core agentic r
 - **SQLite persistence across fresh CLI sessions**, with no need for conversational memory.
 - `recursion_limit` as the safety backstop.
 
-**Where to take it next:** add a shared calendar frontend, authenticated family membership, Google Calendar synchronization, and an optional Twilio worker after the draft-only MVP is accepted."""),
+**Where to take it next:** add live Kinday/SQLite synchronization, authenticated family membership, Google Calendar synchronization, and an optional Twilio worker after the draft-only MVP is accepted."""),
     ]
 
     notebook = {

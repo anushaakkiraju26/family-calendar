@@ -6,6 +6,7 @@ from langgraph.errors import GraphRecursionError
 
 from family_activity_agent.cli import (
     RUN_ARTIFACTS,
+    apply_outing_verification_boundary,
     clear_run_artifacts,
     format_failure,
     final_text,
@@ -57,6 +58,173 @@ def test_final_text_falls_back_to_substantive_tool_result():
         AIMessage(content=""),
     ]}
     assert final_text(result) == "Reviewer requires revision"
+
+
+def test_outing_output_qualifies_calendar_and_venue_claims():
+    text = apply_outing_verification_boundary(
+        "All options are confirmed open and within 45 minutes. "
+        "Source: https://example.org/venue",
+        "Find activities near San Jose this weekend",
+    )
+    assert "confirmed open" not in text
+    assert "No calendar conflicts" in text
+    assert "must be checked" in text
+    assert "recommendation list is incomplete" not in text
+
+
+def test_outing_output_without_sources_is_marked_incomplete():
+    text = apply_outing_verification_boundary(
+        "Try the local museum.",
+        "Find places to visit this weekend",
+    )
+    assert "No source URLs were returned" in text
+
+
+def test_non_outing_output_is_unchanged():
+    text = "No activities are scheduled."
+    assert apply_outing_verification_boundary(
+        text, "Show today's activities"
+    ) == text
+
+
+def test_outing_boundary_rejects_aggregator_and_unmapped_drive_time():
+    text = apply_outing_verification_boundary(
+        "Children's museum has IMAX screenings and is a 5-10 min drive. "
+        "Source: https://www.sanjose.org/things-to-do/kids-family",
+        "Find family activities near San Jose this weekend",
+    )
+
+    assert "Outing research was incomplete" in text
+    assert "tourism roundup" in text
+    assert "Children's museum" not in text
+
+
+def test_outing_boundary_does_not_blanket_reject_imax_on_official_page():
+    text = apply_outing_verification_boundary(
+        "The Tech Interactive has an IMAX Dome Theater. "
+        "https://www.thetech.org/explore/imax-dome-theater/",
+        "Find science activities near San Jose this weekend",
+    )
+
+    assert "Outing research was incomplete" not in text
+    assert "IMAX Dome Theater" in text
+
+
+def test_outing_boundary_allows_suggested_drive_time_with_verification_note():
+    text = apply_outing_verification_boundary(
+        "The Tech is a 5-10 min drive. "
+        "https://www.thetech.org/",
+        "Find science activities near San Jose this weekend",
+    )
+
+    assert "Outing research was incomplete" not in text
+    assert "5-10 min drive" in text
+    assert "drive times must be checked" in text
+
+
+def test_outing_boundary_removes_false_drive_verification_claim():
+    text = apply_outing_verification_boundary(
+        "These fall within a reasonable driving distance; the agent verified "
+        "they're each ≤45 min drive. https://www.thetech.org/",
+        "Find science activities near San Jose this weekend",
+    )
+
+    assert "agent verified" not in text
+    assert "fall within a reasonable" not in text
+    assert "Drive times were not verified" in text
+
+
+def test_outing_boundary_removes_comfortably_reachable_claim():
+    text = apply_outing_verification_boundary(
+        "All three are confirmed to be science-focused, family-friendly, and "
+        "comfortably reachable within a 45-minute drive. "
+        "https://www.thetech.org/",
+        "Find science activities near San Jose this weekend",
+    )
+
+    assert "comfortably reachable" not in text
+    assert "confirmed to be" not in text
+    assert "verify the route" in text
+
+
+def test_outing_boundary_rejects_url_not_returned_by_research_tool():
+    text = apply_outing_verification_boundary(
+        "Children's museum: https://www.sjcdm.org",
+        "Find science activities near San Jose this weekend",
+        evidence_urls={"https://www.cdm.org/"},
+    )
+
+    assert "Outing research was incomplete" in text
+    assert "not returned by the outing research tool" in text
+    assert "sjcdm.org" in text
+
+
+def test_outing_boundary_accepts_exact_research_url():
+    text = apply_outing_verification_boundary(
+        "Children's museum: https://www.cdm.org/",
+        "Find science activities near San Jose this weekend",
+        evidence_urls={"https://www.cdm.org/"},
+    )
+
+    assert "Outing research was incomplete" not in text
+    assert "https://www.cdm.org/" in text
+
+
+def test_outing_boundary_rewrites_drive_phrase_grammatically():
+    text = apply_outing_verification_boundary(
+        "Here are activities that are within roughly a 45-minute drive of "
+        "San Jose. https://www.thetech.org/",
+        "Find science activities near San Jose this weekend",
+    )
+
+    assert "that are with" not in text
+    assert "near San Jose, with estimated drive times" in text
+
+
+def test_outing_boundary_removes_city_implies_drive_limit_claim():
+    text = apply_outing_verification_boundary(
+        "All locations are in San Jose, so travel time should be well within "
+        "the limit. https://www.thetech.org/",
+        "Find science activities near San Jose this weekend",
+    )
+
+    assert "well within" not in text
+    assert "verify each route" in text
+
+
+def test_outing_boundary_rejects_undated_guided_program():
+    text = apply_outing_verification_boundary(
+        "Join a free guided nature walk this weekend. "
+        "https://www.openspaceauthority.org/",
+        "Find outdoor activities near San Jose this weekend",
+        evidence_urls={"https://www.openspaceauthority.org/"},
+    )
+
+    assert "Outing research was incomplete" in text
+    assert "without an exact official event/calendar page" in text
+
+
+def test_outing_boundary_does_not_claim_closure_is_clear():
+    text = apply_outing_verification_boundary(
+        "The park had a Friday closure, but the weekend itself is clear. "
+        "https://www.sanjoseca.gov/parks",
+        "Find outdoor activities near San Jose this weekend",
+    )
+
+    assert "weekend itself is clear" not in text
+    assert "current closure status must be checked" in text
+
+
+def test_outing_boundary_allows_official_source_without_drive_claim():
+    text = apply_outing_verification_boundary(
+        "Alum Rock Park — trails and picnic areas. "
+        "https://www.sanjoseca.gov/Home/Components/FacilityDirectory/FacilityDirectory/2088/2028",
+        "Find outdoor activities near San Jose this weekend",
+    )
+
+    assert "Outing research was incomplete" not in text
+    assert "Alum Rock Park" in text
+    assert "Verification note:" in text
 
 
 def test_clear_run_artifacts_removes_only_known_ephemeral_files(tmp_path):
