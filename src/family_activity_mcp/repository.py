@@ -1,12 +1,20 @@
 import json
 import sqlite3
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import date, datetime, time, timedelta, timezone
+from hashlib import sha256
+from itertools import product
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
-from .models import Event, EventChanges, EventCreate, Reminder
+from .models import (
+    AvailabilityRule, CandidateAssignment, CandidateSet, Event, EventChanges,
+    EventCreate, Reminder, ScheduleCandidate,
+)
+
+PACIFIC = ZoneInfo("America/Los_Angeles")
 
 
 def now_iso() -> str:
@@ -54,6 +62,13 @@ class CalendarRepository:
                     entity_id TEXT NOT NULL, before_state TEXT, after_state TEXT,
                     created_at TEXT NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS availability_rules (
+                    id TEXT PRIMARY KEY, family_id TEXT NOT NULL,
+                    parent_id TEXT NOT NULL, day_of_week INTEGER NOT NULL,
+                    unavailable_start TEXT NOT NULL, unavailable_end TEXT NOT NULL,
+                    timezone TEXT NOT NULL, reason TEXT NOT NULL,
+                    effective_start TEXT, effective_end TEXT
+                );
             """)
             reminder_columns = {
                 row["name"] for row in db.execute("PRAGMA table_info(reminders)")
@@ -61,6 +76,25 @@ class CalendarRepository:
             if "message_body" not in reminder_columns:
                 db.execute(
                     "ALTER TABLE reminders ADD COLUMN message_body TEXT NOT NULL DEFAULT ''"
+                )
+            event_columns = {
+                row["name"] for row in db.execute("PRAGMA table_info(events)")
+            }
+            for name, definition in {
+                "pickup_required": "INTEGER NOT NULL DEFAULT 0",
+                "dropoff_required": "INTEGER NOT NULL DEFAULT 0",
+                "pickup_at": "TEXT",
+                "dropoff_at": "TEXT",
+                "transportation_notes": "TEXT",
+            }.items():
+                if name not in event_columns:
+                    db.execute(f"ALTER TABLE events ADD COLUMN {name} {definition}")
+            for day in (1, 2, 3):
+                db.execute(
+                    """INSERT OR IGNORE INTO availability_rules
+                    VALUES (?, 'family-1', 'vikram', ?, '09:30', '16:00',
+                    'America/Los_Angeles', 'Work schedule', NULL, NULL)""",
+                    (f"family-1-vikram-{day}-work", day),
                 )
 
     @contextmanager
@@ -156,11 +190,14 @@ class CalendarRepository:
             db.execute(
                 """INSERT INTO events
                 (id,family_id,title,start_at,end_at,child_id,location,assigned_parent_id,
-                 status,version,idempotency_key,created_at,updated_at)
-                VALUES (?,?,?,?,?,?,?,?,'active',1,?,?,?)""",
+                 status,version,idempotency_key,created_at,updated_at,pickup_required,
+                 dropoff_required,pickup_at,dropoff_at,transportation_notes)
+                VALUES (?,?,?,?,?,?,?,?,'active',1,?,?,?,?,?,?,?,?)""",
                 (event_id, data.family_id, data.title, iso(data.start_at), iso(data.end_at),
                  data.child_id, data.location, data.assigned_parent_id,
-                 data.idempotency_key, timestamp, timestamp),
+                 data.idempotency_key, timestamp, timestamp,
+                 int(data.pickup_required), int(data.dropoff_required),
+                 iso(data.pickup_at), iso(data.dropoff_at), data.transportation_notes),
             )
             row = self.get_row(db, data.family_id, event_id)
             self.audit(db, data.family_id, "event.created", event_id, after=dict(row))
@@ -203,6 +240,16 @@ class CalendarRepository:
                 end = datetime.fromisoformat(before["end_at"])
             if end and end <= start:
                 raise ValueError("end_at must be later than start_at")
+            pickup = values.get("pickup_at")
+            if pickup is None and before["pickup_at"]:
+                pickup = datetime.fromisoformat(before["pickup_at"])
+            dropoff = values.get("dropoff_at")
+            if dropoff is None and before["dropoff_at"]:
+                dropoff = datetime.fromisoformat(before["dropoff_at"])
+            if pickup and (pickup.tzinfo is None or pickup > start):
+                raise ValueError("pickup_at must be timezone-aware and not after start_at")
+            if dropoff and (dropoff.tzinfo is None or (end and dropoff < end)):
+                raise ValueError("dropoff_at must be timezone-aware and not before end_at")
             if set(values) & {
                 "start_at", "end_at", "child_id", "assigned_parent_id"
             }:
@@ -402,3 +449,200 @@ class CalendarRepository:
             self.audit(db, family_id, "reminders.cancelled", event_id,
                        after={"count": cursor.rowcount})
             return cursor.rowcount
+
+    def list_parent_availability(self, family_id, parent_id=None):
+        clauses, params = ["family_id=?"], [family_id]
+        if parent_id:
+            clauses.append("parent_id=?")
+            params.append(parent_id)
+        with self.connect() as db:
+            rows = db.execute(
+                f"SELECT * FROM availability_rules WHERE {' AND '.join(clauses)} "
+                "ORDER BY parent_id, day_of_week, unavailable_start",
+                params,
+            ).fetchall()
+        return [AvailabilityRule.model_validate(dict(row)) for row in rows]
+
+    def check_parent_availability(self, family_id, parent_id, start_at, end_at):
+        if start_at.tzinfo is None or end_at.tzinfo is None:
+            raise ValueError("availability times must be timezone-aware")
+        if end_at <= start_at:
+            raise ValueError("end_at must be later than start_at")
+        conflicts = []
+        for rule in self.list_parent_availability(family_id, parent_id):
+            zone = ZoneInfo(rule.timezone)
+            local_start, local_end = start_at.astimezone(zone), end_at.astimezone(zone)
+            current = local_start.date()
+            while current <= local_end.date():
+                active = (
+                    current.weekday() == rule.day_of_week
+                    and (rule.effective_start is None or current >= rule.effective_start)
+                    and (rule.effective_end is None or current <= rule.effective_end)
+                )
+                if active:
+                    blocked_start = datetime.combine(current, rule.unavailable_start, zone)
+                    blocked_end = datetime.combine(current, rule.unavailable_end, zone)
+                    if local_start < blocked_end and local_end > blocked_start:
+                        conflicts.append({
+                            "kind": "parent_unavailable",
+                            "parent_id": parent_id,
+                            "start_at": blocked_start.isoformat(),
+                            "end_at": blocked_end.isoformat(),
+                            "reason": rule.reason,
+                            "rule_id": rule.id,
+                        })
+                current += timedelta(days=1)
+        return conflicts
+
+    @staticmethod
+    def _event_interval(event):
+        start = datetime.fromisoformat(event["start_at"])
+        end = datetime.fromisoformat(event["end_at"]) if event["end_at"] else start
+        return start, end
+
+    def transportation_requirements(self, events):
+        requirements = []
+        for event in events:
+            start, end = self._event_interval(event)
+            common = {
+                "event_id": event["id"], "event_version": event["version"],
+                "child_id": event["child_id"], "location": event["location"],
+            }
+            if event["pickup_required"]:
+                at = datetime.fromisoformat(event["pickup_at"]) if event["pickup_at"] else start
+                requirements.append({**common, "requirement_id": f"{event['id']}:pickup",
+                    "requirement_type": "pickup", "required_start": (at-timedelta(minutes=15)).isoformat(),
+                    "required_end": at.isoformat()})
+            if event["dropoff_required"]:
+                at = datetime.fromisoformat(event["dropoff_at"]) if event["dropoff_at"] else end
+                requirements.append({**common, "requirement_id": f"{event['id']}:dropoff",
+                    "requirement_type": "dropoff", "required_start": at.isoformat(),
+                    "required_end": (at+timedelta(minutes=15)).isoformat()})
+        return requirements
+
+    def check_transportation_conflicts(self, family_id, assignments, travel_buffer_minutes=20):
+        by_parent = {}
+        conflicts, warnings = [], []
+        for item in assignments:
+            parent = item.get("assigned_parent_id")
+            if not parent:
+                conflicts.append({"kind": "unassigned_transportation", **item})
+                continue
+            start = datetime.fromisoformat(item["required_start"])
+            end = datetime.fromisoformat(item["required_end"])
+            conflicts.extend(self.check_parent_availability(family_id, parent, start, end))
+            by_parent.setdefault(parent, []).append((start, end, item))
+            if not item.get("location"):
+                warnings.append({"kind": "unknown_location", "requirement_id": item["requirement_id"]})
+        buffer = timedelta(minutes=travel_buffer_minutes)
+        for parent, legs in by_parent.items():
+            legs.sort(key=lambda leg: leg[0])
+            for previous, current in zip(legs, legs[1:]):
+                if current[0] < previous[1]:
+                    conflicts.append({"kind": "transportation_overlap", "parent_id": parent,
+                        "requirements": [previous[2]["requirement_id"], current[2]["requirement_id"]]})
+                elif (previous[2].get("location") != current[2].get("location")
+                      and current[0] < previous[1] + buffer):
+                    conflicts.append({"kind": "insufficient_travel_time", "parent_id": parent,
+                        "required_minutes": travel_buffer_minutes,
+                        "requirements": [previous[2]["requirement_id"], current[2]["requirement_id"]]})
+        return {"conflicts": conflicts, "warnings": warnings}
+
+    def generate_schedule_candidates(self, family_id, event_ids, parent_ids, candidate_count=3):
+        if not event_ids or not parent_ids:
+            raise ValueError("event_ids and parent_ids are required")
+        if len(event_ids) > 8 or len(parent_ids) > 4:
+            raise ValueError("candidate generation supports at most 8 events and 4 parents")
+        with self.connect() as db:
+            rows = [dict(self.get_row(db, family_id, event_id)) for event_id in event_ids]
+        if any(row["status"] != "active" for row in rows):
+            raise ValueError("candidate events must be active")
+        fingerprint_source = "|".join(f"{r['id']}:{r['version']}" for r in sorted(rows, key=lambda r:r["id"]))
+        fingerprint = sha256(fingerprint_source.encode()).hexdigest()[:16]
+        candidates = []
+        for index, parents in enumerate(product(parent_ids, repeat=len(rows)), start=1):
+            conflicts, warnings, rationale, transport = [], [], [], []
+            assignments = []
+            coverage = []
+            for row, parent in zip(rows, parents):
+                assignments.append(CandidateAssignment(
+                    event_id=row["id"], expected_version=row["version"], assigned_parent_id=parent
+                ))
+                start, end = self._event_interval(row)
+                for unavailable in self.check_parent_availability(family_id, parent, start, end):
+                    conflicts.append({**unavailable, "event_id": row["id"]})
+                coverage.append({"requirement_id": f"{row['id']}:coverage", "event_id": row["id"],
+                    "event_version": row["version"], "requirement_type": "event_coverage",
+                    "required_start": start.isoformat(), "required_end": end.isoformat(),
+                    "location": row["location"], "assigned_parent_id": parent})
+                for requirement in self.transportation_requirements([row]):
+                    leg = {**requirement, "assigned_parent_id": parent}
+                    transport.append(leg)
+                    coverage.append(leg)
+            checked = self.check_transportation_conflicts(family_id, coverage)
+            conflicts.extend(checked["conflicts"])
+            warnings.extend(checked["warnings"])
+            counts = {parent: parents.count(parent) for parent in parent_ids}
+            imbalance = max(counts.values()) - min(counts.values())
+            score = 10 * len(rows) - 10 * len(conflicts) - 2 * len(warnings) - imbalance
+            rationale.append(f"Covers {len(rows)} events across {len(set(parents))} parent(s).")
+            if imbalance == 0:
+                rationale.append("Responsibilities are evenly balanced.")
+            candidates.append(ScheduleCandidate(
+                candidate_id=f"option-{index}", assignments=assignments,
+                transportation=transport, conflicts=conflicts, warnings=warnings,
+                score=score, rationale=rationale,
+            ))
+        candidates.sort(key=lambda c: (-c.score, len(c.conflicts), c.candidate_id))
+        selected = candidates[:max(1, min(candidate_count, 5))]
+        recommended = next((c.candidate_id for c in selected if not c.conflicts), None)
+        return CandidateSet(
+            family_id=family_id, generated_at=datetime.now(timezone.utc),
+            calendar_fingerprint=fingerprint, candidates=selected,
+            recommended_candidate_id=recommended,
+        )
+
+    def review_schedule_candidate(self, family_id, candidate):
+        assignments = candidate.get("assignments") or []
+        if not assignments:
+            raise ValueError("candidate assignments are required")
+        conflicts = list(candidate.get("conflicts") or [])
+        warnings = list(candidate.get("warnings") or [])
+        rows, coverage = [], []
+        with self.connect() as db:
+            for assignment in assignments:
+                row = dict(self.get_row(db, family_id, assignment["event_id"]))
+                rows.append(row)
+                if row["status"] != "active":
+                    conflicts.append({"kind": "inactive_event", "event_id": row["id"]})
+                if row["version"] != assignment.get("expected_version"):
+                    conflicts.append({
+                        "kind": "stale_event_version", "event_id": row["id"],
+                        "expected_version": assignment.get("expected_version"),
+                        "current_version": row["version"],
+                    })
+                start, end = self._event_interval(row)
+                parent = assignment.get("assigned_parent_id")
+                coverage.append({
+                    "requirement_id": f"{row['id']}:coverage", "event_id": row["id"],
+                    "event_version": row["version"], "requirement_type": "event_coverage",
+                    "required_start": start.isoformat(), "required_end": end.isoformat(),
+                    "location": row["location"], "assigned_parent_id": parent,
+                })
+                for requirement in self.transportation_requirements([row]):
+                    coverage.append({**requirement, "assigned_parent_id": parent})
+        checked = self.check_transportation_conflicts(family_id, coverage)
+        conflicts.extend(checked["conflicts"])
+        warnings.extend(checked["warnings"])
+        fingerprint_source = "|".join(
+            f"{row['id']}:{row['version']}" for row in sorted(rows, key=lambda row: row["id"])
+        )
+        return {
+            "status": "approved" if not conflicts else "revision_required",
+            "reviewed_candidate_id": candidate.get("candidate_id"),
+            "calendar_fingerprint": sha256(fingerprint_source.encode()).hexdigest()[:16],
+            "blocking_conflicts": conflicts,
+            "warnings": warnings,
+            "reviewed_revision_number": candidate.get("revision_number", 1),
+            "event_ids": [row["id"] for row in rows],
+        }

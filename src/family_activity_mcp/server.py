@@ -41,12 +41,18 @@ def create_event(
     family_id: str, title: str, start_at: datetime, idempotency_key: str,
     end_at: datetime | None = None, child_id: str | None = None,
     location: str | None = None, assigned_parent_id: str | None = None,
+    pickup_required: bool = False, dropoff_required: bool = False,
+    pickup_at: datetime | None = None, dropoff_at: datetime | None = None,
+    transportation_notes: str | None = None,
 ) -> str:
     """Create one event; rejects same-child or same-parent time conflicts."""
     return output(repository.create_event(EventCreate(
         family_id=family_id, title=title, start_at=start_at, end_at=end_at,
         child_id=child_id, location=location,
         assigned_parent_id=assigned_parent_id, idempotency_key=idempotency_key,
+        pickup_required=pickup_required, dropoff_required=dropoff_required,
+        pickup_at=pickup_at, dropoff_at=dropoff_at,
+        transportation_notes=transportation_notes,
     )))
 
 
@@ -68,12 +74,18 @@ def update_event(
     title: str | None = None, start_at: datetime | None = None,
     end_at: datetime | None = None, child_id: str | None = None,
     location: str | None = None, assigned_parent_id: str | None = None,
+    pickup_required: bool | None = None, dropoff_required: bool | None = None,
+    pickup_at: datetime | None = None, dropoff_at: datetime | None = None,
+    transportation_notes: str | None = None,
 ) -> str:
     """Update an event; rejects conflicts and uses version to prevent lost updates."""
     supplied = {key: value for key, value in {
         "title": title, "start_at": start_at, "end_at": end_at,
         "child_id": child_id, "location": location,
         "assigned_parent_id": assigned_parent_id,
+        "pickup_required": pickup_required, "dropoff_required": dropoff_required,
+        "pickup_at": pickup_at, "dropoff_at": dropoff_at,
+        "transportation_notes": transportation_notes,
     }.items() if value is not None}
     return output(repository.update_event(
         family_id, event_id, EventChanges.model_validate(supplied), expected_version
@@ -120,6 +132,103 @@ def list_school_events(start_date: date, end_date: date) -> str:
 def check_school_conflicts(start_at: datetime, end_at: datetime) -> str:
     """Check a proposed activity against school hours and the school calendar."""
     return output(find_school_conflicts(start_at, end_at))
+
+
+@mcp.tool()
+def list_parent_availability(
+    family_id: str, parent_id: str | None = None
+) -> str:
+    """List deterministic recurring parent unavailability rules."""
+    return output(repository.list_parent_availability(family_id, parent_id))
+
+
+@mcp.tool()
+def check_parent_availability(
+    family_id: str, parent_id: str, start_at: datetime, end_at: datetime
+) -> str:
+    """Check a proposed responsibility against stored parent availability."""
+    return output(repository.check_parent_availability(
+        family_id, parent_id, start_at, end_at
+    ))
+
+
+@mcp.tool()
+def check_transportation_conflicts(
+    family_id: str, assignments: list[dict[str, Any]],
+    travel_buffer_minutes: int = 20,
+) -> str:
+    """Validate pickup, drop-off, coverage, overlap, and travel-buffer constraints."""
+    return output(repository.check_transportation_conflicts(
+        family_id, assignments, travel_buffer_minutes
+    ))
+
+
+@mcp.tool()
+def generate_schedule_candidates(
+    family_id: str, event_ids: list[str], parent_ids: list[str],
+    candidate_count: int = 3,
+) -> str:
+    """Generate and rank deterministic parent/transportation assignment options."""
+    return output(repository.generate_schedule_candidates(
+        family_id, event_ids, parent_ids, candidate_count
+    ))
+
+
+@mcp.tool()
+def review_schedule_candidate(family_id: str, candidate: dict[str, Any]) -> str:
+    """Deterministically review versions, assignments, transport, and school overlaps."""
+    review = repository.review_schedule_candidate(family_id, candidate)
+    school_conflicts = []
+    for event_id in review["event_ids"]:
+        event = repository.list_events(family_id, include_deleted=True)
+        matched = next(item for item in event if item.id == event_id)
+        end_at = matched.end_at or matched.start_at
+        for conflict in find_school_conflicts(matched.start_at, end_at):
+            if conflict.get("kind") == "school_event_overlap":
+                school_conflicts.append({
+                    **conflict,
+                    "event_id": event_id,
+                    "family_event_title": matched.title,
+                })
+    review["blocking_conflicts"].extend(school_conflicts)
+    review["status"] = (
+        "approved" if not review["blocking_conflicts"] else "revision_required"
+    )
+    resolution_options = []
+    seen_events = set()
+    for conflict in school_conflicts:
+        event_id = conflict["event_id"]
+        if event_id in seen_events:
+            continue
+        seen_events.add(event_id)
+        resolution_options.append({
+            "action": "request_reschedule",
+            "event_id": event_id,
+            "event_title": conflict["family_event_title"],
+            "instruction": (
+                "Ask the parent for a preferred new time, then validate it with "
+                "check_conflicts and check_school_conflicts before proposing a change."
+            ),
+        })
+    if school_conflicts:
+        resolution_options.extend([
+            {
+                "action": "assign_school_attendance",
+                "instruction": (
+                    "Ask whether a separate available adult can attend the school "
+                    "event; verify availability before treating this as resolved."
+                ),
+            },
+            {
+                "action": "acknowledge_tradeoff",
+                "instruction": (
+                    "The parent may explicitly choose which commitment to attend, "
+                    "but the overlap remains recorded and is not conflict-free."
+                ),
+            },
+        ])
+    review["resolution_options"] = resolution_options
+    return output(review)
 
 
 @mcp.tool()

@@ -1,15 +1,18 @@
 import asyncio
 import sqlite3
 
-from groq import APIConnectionError, APITimeoutError
+from openai import APIConnectionError, APITimeoutError
+from langgraph.errors import GraphRecursionError
 
 from family_activity_agent.cli import (
     RUN_ARTIFACTS,
     clear_run_artifacts,
     format_failure,
+    final_text,
     run_config,
     tracing_enabled,
 )
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 
 
 def test_timeout_failure_is_actionable_and_does_not_assume_success():
@@ -20,7 +23,7 @@ def test_timeout_failure_is_actionable_and_does_not_assume_success():
 
 def test_connection_failure_is_concise():
     message = format_failure(APIConnectionError(request=None))
-    assert message == "Could not connect to Groq. Check your network and try again."
+    assert message == "Could not connect to Nebius. Check your network and try again."
 
 
 def test_database_and_unknown_failures_do_not_claim_success():
@@ -30,6 +33,30 @@ def test_database_and_unknown_failures_do_not_claim_success():
 
 def test_async_timeout_is_handled():
     assert "timed out" in format_failure(asyncio.TimeoutError())
+
+
+def test_recursion_limit_failure_does_not_claim_success():
+    message = format_failure(GraphRecursionError("limit"))
+    assert "safety step limit" in message
+    assert "No calendar changes" in message
+
+
+def test_final_text_skips_empty_trailing_assistant_message():
+    result = {"messages": [
+        HumanMessage(content="request"),
+        AIMessage(content="Reviewed plan"),
+        AIMessage(content=""),
+    ]}
+    assert final_text(result) == "Reviewed plan"
+
+
+def test_final_text_falls_back_to_substantive_tool_result():
+    result = {"messages": [
+        HumanMessage(content="request"),
+        ToolMessage(content="Reviewer requires revision", tool_call_id="call-1"),
+        AIMessage(content=""),
+    ]}
+    assert final_text(result) == "Reviewer requires revision"
 
 
 def test_clear_run_artifacts_removes_only_known_ephemeral_files(tmp_path):
@@ -53,6 +80,7 @@ def test_langsmith_run_config_has_safe_course_labels(monkeypatch):
     monkeypatch.setenv("FAMILY_ACTIVITY_MODEL", "test-model")
     config = run_config("thread-secret", None)
     assert config["run_name"] == "family-activity-cli-request"
+    assert config["recursion_limit"] == 60
     assert "family-activity-agent" in config["tags"]
     assert config["metadata"] == {
         "surface": "cli",

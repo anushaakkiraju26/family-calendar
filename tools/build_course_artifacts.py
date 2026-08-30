@@ -114,7 +114,7 @@ def add_title(doc):
 
     summary = doc.add_paragraph()
     set_run_font(summary.add_run("Implementation status: "), bold=True)
-    set_run_font(summary.add_run("Working CLI MVP with Deep Agents, LangGraph, Groq, MCP tools, SQLite persistence, human approval, deterministic validation, offline evaluations, and optional LangSmith tracing."))
+    set_run_font(summary.add_run("Working CLI MVP with Deep Agents, LangGraph, Nebius Nemotron, MCP tools, SQLite persistence, human approval, deterministic validation, offline evaluations, and optional LangSmith tracing."))
 
 
 def add_bullets(doc, items):
@@ -196,7 +196,7 @@ def build_docx():
 
     doc.add_heading("3. Agent One-Liner", level=1)
     doc.add_paragraph(
-        "My agent helps parents coordinate family activities in a CLI-backed shared calendar, replacing scattered messages and manual cross-checking. It autonomously resolves requests, reads family and school-calendar state, reviews weekly plans, checks conflicts, and drafts reminders using 12 MCP tools; it hands off to a parent before every create, update, delete, restore, or reminder change, and succeeds when a parent can complete a calendar task in under two minutes with no unapproved writes."
+        "My agent helps parents coordinate family activities in a CLI-backed shared calendar, replacing scattered messages and manual cross-checking. It autonomously resolves requests, reads family and school-calendar state, generates ranked transportation-aware weekly options, reviews plans, checks conflicts, and drafts reminders using 17 MCP tools; it hands off to a parent before every create, update, delete, restore, or reminder change, and succeeds when a parent can complete a calendar task with no unapproved writes."
     )
 
     doc.add_heading("4. Scope", level=1)
@@ -217,7 +217,7 @@ def build_docx():
         "A web or mobile frontend; the course MVP uses a CLI.",
         "Authentication, production tenant identity, and phone-number management.",
         "Calendar synchronization with Google Calendar or Apple Calendar.",
-        "Recurring-event series editing and transportation optimization.",
+        "Recurring-event series editing and live traffic-aware route optimization.",
     ])
 
     doc.add_heading("5. High-Level Architecture", level=1)
@@ -229,6 +229,9 @@ Family Coordinator (Deep Agents + LangGraph)
     ├── Intake Agent ───── normalizes ambiguous requests
     ├── Calendar Agent ─── event lifecycle
     ├── Conflict Agent ─── overlap analysis
+    ├── Weekly Planner ─── weekly context
+    ├── Transportation ─── ranked assignment candidates
+    ├── Schedule Reviewer  independent review
     └── Reminder Agent ─── reminder drafts
               │
               ▼
@@ -236,10 +239,10 @@ Family Coordinator (Deep Agents + LangGraph)
               │
        ┌──────┴────────┐
        ▼               ▼
-CalendarRepository   10 typed tools
+CalendarRepository   17 typed tools
        │
        ▼
-SQLite: events + reminders + audit_logs""")
+SQLite: events + reminders + availability_rules + audit_logs""")
 
     doc.add_heading("6. Runtime Flow", level=1)
     add_numbered(doc, [
@@ -259,6 +262,7 @@ SQLite: events + reminders + audit_logs""")
         ["Calendar Agent", "Handles complex searches and event lifecycle operations.", "Calendar tools + calendar policy"],
         ["Conflict Agent", "Explains child and parent overlaps without mutating state.", "check_conflicts"],
         ["Weekly Planner", "Combines family events, Reed school dates, and proposed parent assignments.", "Read-only calendar and school tools"],
+        ["Transportation Agent", "Generates ranked assignment and pickup/drop-off candidates.", "Availability, transportation, and candidate tools"],
         ["Schedule Reviewer", "Audits a weekly plan and requires revision when blocking issues remain.", "Shared plan and review artifacts"],
         ["Reminder Agent", "Resolves events and creates reviewable reminder drafts.", "Reminder tools + reminder policy"],
     ], [1.35, 3.15, 2.0])
@@ -273,6 +277,11 @@ SQLite: events + reminders + audit_logs""")
         ["check_conflicts", "Read", "Explain overlapping child/parent activities.", "No"],
         ["list_school_events", "Read", "List Reed Elementary dates in a range.", "No"],
         ["check_school_conflicts", "Read", "Check school hours, closures, early dismissal, and timed events.", "No"],
+        ["list_parent_availability", "Read", "List structured parent unavailability rules.", "No"],
+        ["check_parent_availability", "Read", "Validate a proposed responsibility against availability.", "No"],
+        ["check_transportation_conflicts", "Read", "Check coverage, overlaps, and travel buffers.", "No"],
+        ["generate_schedule_candidates", "Read", "Generate and rank versioned weekly assignment options.", "No"],
+        ["review_schedule_candidate", "Read", "Deterministically review dates, versions, assignments, and school overlaps.", "No"],
         ["schedule_reminder", "Write", "Store one reminder draft.", "Required"],
         ["schedule_day_of_reminders", "Write", "Atomically store drafts for both parents.", "Required"],
         ["list_reminders", "Read", "Review reminder drafts and statuses.", "No"],
@@ -280,7 +289,7 @@ SQLite: events + reminders + audit_logs""")
     ], [1.7, 0.65, 3.15, 1.0])
 
     doc.add_heading("9. Data and Persistence", level=1)
-    doc.add_paragraph("No external dataset is required. The application uses synthetic course-demo family data stored in three SQLite tables.")
+    doc.add_paragraph("No external dataset is required. The application uses synthetic course-demo family data stored in four SQLite tables.")
     add_table(doc, ["Table", "Durable information"], [
         ["events", "Family-scoped event details, assigned child/parent, status, version, idempotency key, deletion metadata."],
         ["reminders", "Recipient, scheduled time, channel, drafted message body, and status."],
@@ -313,14 +322,14 @@ WRITE REQUEST → proposed tool call → PENDING APPROVAL
         ["Same child or parent overlap", "Transaction rejects the create/update; agent explains the conflict."],
         ["Stale event version", "Optimistic concurrency check returns the current-version conflict."],
         ["Duplicate retry", "Stable idempotency keys return the existing event or reminder records."],
-        ["Groq 429 / timeout", "CLI returns a concise retry message instead of a traceback."],
+        ["Nebius 429 / timeout", "CLI returns a concise retry message instead of a traceback."],
         ["MCP or SQLite failure", "No success is assumed; user is told to verify state before retrying."],
         ["Rejected approval", "Pending tool call is not executed."],
         ["Stale agent artifact", "Known temporary JSON files are cleared at the next CLI start."],
     ], [2.0, 4.5])
 
     doc.add_heading("13. Evaluation Strategy", level=1)
-    doc.add_paragraph("The offline suite contains 22 passing tests and does not consume Groq quota. It verifies repository rules plus the actual Deep Agent, LangGraph interrupt/resume flow, MCP subprocess, and SQLite mutation boundary using a deterministic fake chat model.")
+    doc.add_paragraph("The offline suite uses a deterministic fake chat model and does not consume Nebius quota. It verifies repository rules plus the actual Deep Agent, LangGraph interrupt/resume flow, MCP subprocess, and SQLite mutation boundary.")
     add_bullets(doc, [
         "Real MCP read invocation through a managed stdio subprocess.",
         "Mutation absent before approval and present only after resume approval.",
@@ -336,7 +345,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -e '.[dev]'
 cp .env.example .env
-# Add GROQ_API_KEY. Optionally add LANGSMITH_API_KEY.
+# Add NEBIUS_API_KEY. Optionally add LANGSMITH_API_KEY.
 pytest
 family-activity-agent 'Show activities today for family-1'""")
     doc.add_paragraph("Optional LangSmith tracing uses LANGSMITH_TRACING=true and project family-activity-agent-mvp. Course traces should use synthetic names and schedules because traces can contain prompts and tool results.")
@@ -345,7 +354,7 @@ family-activity-agent 'Show activities today for family-1'""")
     add_bullets(doc, [
         "Create a standalone MCP server with event lifecycle and reminder tools; do not reuse the home-buying project.",
         "Build a Deep Agent coordinator with intake, calendar, conflict, and reminder specialists.",
-        "Switch the model provider to Groq and reduce latency/tool-message incompatibilities.",
+        "Use Nebius Token Factory with Nemotron through its OpenAI-compatible API.",
         "Use Pacific timezone and school hours from family preferences.",
         "Add soft deletion, restoration, both-parent reminder drafts, and approval gates.",
         "Prevent false success when the agent writes a plan but does not execute the MCP tool.",
@@ -356,20 +365,20 @@ family-activity-agent 'Show activities today for family-1'""")
 
     doc.add_heading("16. Demo Script (5 Minutes or Less)", level=1)
     add_numbered(doc, [
-        "Show the architecture and identify the coordinator, six subagents, MCP server, school calendar, and SQLite state.",
+        "Show the architecture and identify the coordinator, seven subagents, MCP server, school calendar, and SQLite state.",
         "Create a future event and pause at the create_event approval prompt; approve it.",
         "List the event to prove persistence in a separate CLI command.",
         "Create a different child's overlapping event to show that it is allowed.",
         "Attempt to assign both overlapping events to one parent and show the conflict with no update.",
         "Draft a day-of reminder for both parents and emphasize that no SMS is sent.",
         "Delete and restore an event to demonstrate reversible writes.",
-        "Show pytest output (22 passing) and one LangSmith trace tree using synthetic data.",
+        "Show the passing pytest suite and one LangSmith trace tree using synthetic data.",
     ])
 
     doc.add_heading("17. Validation Checklist", level=1)
     add_table(doc, ["Before demo", "During / after demo"], [
         ["Virtual environment active", "Every write displays an approval prompt"],
-        ["GROQ_API_KEY configured", "Past event is rejected"],
+        ["NEBIUS_API_KEY configured", "Past event is rejected"],
         ["Optional LangSmith key configured", "Parent conflict is detected"],
         ["pytest passes", "Reminder is described as a saved draft"],
         ["Synthetic demo data selected", "Separate CLI read proves SQLite persistence"],
@@ -426,9 +435,9 @@ Parent request → Family Coordinator (plans, routes, verifies)
 | Deep Agents concept | Family activity implementation |
 |---|---|
 | Planning | `write_todos` breaks a parent request into steps |
-| Delegation | `task` sends focused work to six specialists |
+| Delegation | `task` sends focused work to seven specialists |
 | Shared work | Temporary files coordinate one run |
-| Tools | A standalone MCP server exposes twelve typed family and school-calendar operations |
+| Tools | A standalone MCP server exposes seventeen typed calendar, school, availability, transportation, review, and reminder operations |
 | Skills | Calendar policy, reminder policy, and family preferences load on demand |
 | Durable state | SQLite stores events, assignments, reminders, and audit history |
 | Human-in-the-loop | LangGraph interrupts before every mutation |
@@ -447,8 +456,8 @@ from uuid import uuid4
 from dotenv import load_dotenv
 
 load_dotenv()
-if not os.getenv("GROQ_API_KEY"):
-    raise RuntimeError("Add GROQ_API_KEY to .env before running the live agent cells.")
+if not os.getenv("NEBIUS_API_KEY"):
+    raise RuntimeError("Add NEBIUS_API_KEY to .env before running the live agent cells.")
 
 if os.getenv("LANGSMITH_API_KEY", "").strip():
     os.environ["LANGSMITH_TRACING"] = "true"
@@ -458,7 +467,7 @@ else:
     os.environ["LANGSMITH_TRACING"] = "false"
     print("LangSmith tracing: disabled")
 
-print("Model:", os.getenv("FAMILY_ACTIVITY_MODEL", "openai/gpt-oss-20b"))
+print("Model:", os.getenv("FAMILY_ACTIVITY_MODEL", "nvidia/Nemotron-3-Nano-Omni"))
 """),
         md("""## 2. Family grounding
 
@@ -532,7 +541,7 @@ for name, purpose in subagents.items():
 
 This is the core Deep Agents lesson: configure the model, prompt, tools, subagents, skills, backend, checkpointer, and interrupt policy. The framework supplies planning, delegation, filesystem tools, and interrupt plumbing.
 
-`build_family_agent()` also discovers MCP tools and wraps their results for Groq tool-message compatibility."""),
+`build_family_agent()` also discovers MCP tools and normalizes their results for model tool-message compatibility."""),
         md("![Assembling the Deep Agent](./images/06_img.png)\n"),
         code("""from family_activity_agent.agent import build_family_agent
 
@@ -634,11 +643,12 @@ verify_result["messages"][-1].pretty_print()
 This is the workflow that makes the project visibly more agentic than a tool router. A weekly request requires several isolated specialists and shared artifacts:
 
 1. **Intake Agent** normalizes the week and family goal.
-2. **Weekly Planner** calls `list_events`, `list_school_events`, `check_conflicts`, and `check_school_conflicts`.
-3. **Schedule Reviewer** audits the whole proposal—not one event at a time.
-4. A rejected review loops back to the planner for revision and another review.
-5. **Reminder Agent** drafts reminders only after review approval.
-6. Proposed writes are emitted together so the parent sees one grouped approval set.
+2. **Weekly Planner** loads existing family events and Reed school events.
+3. **Transportation Agent** calls the deterministic availability, transportation, and candidate tools to produce three ranked options.
+4. **Schedule Reviewer** audits the recommended option—not one event at a time.
+5. A rejected review loops back to planning for revision and another review.
+6. **Reminder Agent** drafts reminders only after review approval.
+7. Proposed writes carry expected versions and are emitted together so the parent sees one grouped approval set.
 
 The school source is the supplied Reed Elementary 2026–2027 calendar. Its dates are subject to change, so this is reviewed project data rather than a live school feed."""),
         code("""import json
@@ -650,8 +660,9 @@ print(school_calendar["school"], school_calendar["school_year"])
 print("Transcribed events:", len(school_calendar["events"]))
 
 weekly_prompt = (
-    "Coordinate next week for family-1, identify family and school conflicts, "
-    "propose parent assignments, and draft day-of reminders."
+    "Coordinate next week for family-1, identify family, school, and transportation "
+    "conflicts, generate three options for parent-1, parent-2, and vikram, recommend "
+    "the best reviewed plan, and draft reminders without applying changes."
 )
 print("\\nTry this deep workflow in the CLI:\\n", weekly_prompt)
 """),
@@ -660,11 +671,11 @@ print("\\nTry this deep workflow in the CLI:\\n", weekly_prompt)
 You built a family activity system that demonstrates the course's core agentic requirements:
 
 - A **Deep Agent coordinator** that routes and delegates.
-- Six **specialist subagents**, including a weekly planner and independent reviewer.
-- Twelve typed **MCP tools** backed by SQLite and the supplied school calendar.
+- Seven **specialist subagents**, including transportation planning and independent review.
+- Seventeen typed **MCP tools** backed by SQLite and the supplied school calendar.
 - A **review/revision loop** with shared weekly-plan artifacts.
 - **Human approval** before every write.
-- **Deterministic Python safeguards** for past times, conflicts, versions, family scope, and idempotency.
+- **Deterministic Python safeguards** for past times, conflicts, versions, family scope, availability, transportation, candidate scoring, and idempotency.
 - **Draft-only reminders** with no external messaging side effects.
 - **SQLite persistence across fresh CLI sessions**, with no need for conversational memory.
 - `recursion_limit` as the safety backstop.

@@ -10,7 +10,7 @@ requires-python = ">=3.11"
 dependencies = [
   "deepagents>=0.6,<1",
   "langchain-mcp-adapters>=0.3,<1",
-  "langchain-groq>=1,<2",
+  "langchain-openai>=1,<2",
   "langsmith>=0.4,<1",
   "mcp>=1.28,<2",
   "pydantic>=2.7,<3",

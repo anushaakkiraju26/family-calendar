@@ -21,7 +21,7 @@ def invoke(agent, payload, config):
     return asyncio.run(agent.ainvoke(payload, config=config))
 
 
-def test_read_request_calls_real_mcp_subprocess_without_groq(tmp_path, monkeypatch):
+def test_read_request_calls_real_mcp_subprocess_without_live_model(tmp_path, monkeypatch):
     database = tmp_path / "agent-read.db"
     monkeypatch.setenv("FAMILY_ACTIVITY_DB", str(database))
     model = ToolCallingFakeModel(responses=[

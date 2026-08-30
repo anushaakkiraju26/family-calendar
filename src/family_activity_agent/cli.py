@@ -10,9 +10,11 @@ from pathlib import Path
 from uuid import uuid4
 
 from dotenv import load_dotenv
-from groq import APIConnectionError, APITimeoutError, RateLimitError
+from openai import APIConnectionError, APITimeoutError, RateLimitError
 from langchain_core.tracers.langchain import wait_for_all_tracers
+from langchain_core.messages import AIMessage, ToolMessage
 from langgraph.types import Command
+from langgraph.errors import GraphRecursionError
 
 from .agent import PROJECT_ROOT, build_family_agent
 
@@ -23,6 +25,7 @@ RUN_ARTIFACTS = (
     "work/reminder_plan.json",
     "work/weekly_schedule.json",
     "work/assignment_proposal.json",
+    "work/transportation_plan.json",
     "reviews/conflict_report.json",
     "reviews/weekly_schedule_review.json",
     "final/completed_action.json",
@@ -45,13 +48,13 @@ def run_config(thread_id: str, model: str | None) -> dict:
     """Attach non-sensitive labels inherited by LangSmith child runs."""
     return {
         "configurable": {"thread_id": thread_id},
-        "recursion_limit": 30,
+        "recursion_limit": 60,
         "run_name": "family-activity-cli-request",
         "tags": ["family-activity-agent", "cli", "mvp"],
         "metadata": {
             "surface": "cli",
             "model": model or os.getenv(
-                "FAMILY_ACTIVITY_MODEL", "openai/gpt-oss-20b"
+                "FAMILY_ACTIVITY_MODEL", "nvidia/Nemotron-3-Nano-Omni"
             ),
             "reminder_mode": "draft-only",
         },
@@ -68,7 +71,7 @@ def format_failure(error: Exception) -> str:
         )
         retry = f" Retry after approximately {match.group(1)}." if match else ""
         return (
-            "Groq's rate limit was reached, so the request could not finish."
+            "Nebius's rate limit was reached, so the request could not finish."
             f"{retry} Check the calendar before retrying because an earlier "
             "approved action may already have completed."
         )
@@ -78,7 +81,12 @@ def format_failure(error: Exception) -> str:
             "because an earlier approved action may already have completed."
         )
     if isinstance(error, APIConnectionError):
-        return "Could not connect to Groq. Check your network and try again."
+        return "Could not connect to Nebius. Check your network and try again."
+    if isinstance(error, GraphRecursionError):
+        return (
+            "The planning workflow reached its safety step limit before producing "
+            "a reviewed plan. No calendar changes were made."
+        )
     if isinstance(error, sqlite3.Error):
         return "The calendar database could not complete the request. No success is assumed."
     if "mcp" in type(error).__module__.lower() or "mcp" in str(error).lower():
@@ -102,13 +110,46 @@ def pending_requests(result: dict) -> list[dict]:
     return requests
 
 
-def print_final(result: dict) -> None:
+def message_text(content) -> str:
+    if isinstance(content, str):
+        return content.strip()
+    if isinstance(content, list):
+        parts = []
+        for block in content:
+            if isinstance(block, str):
+                parts.append(block)
+            elif isinstance(block, dict) and block.get("type") == "text":
+                parts.append(str(block.get("text", "")))
+        return "\n".join(part for part in parts if part.strip()).strip()
+    return str(content).strip() if content is not None else ""
+
+
+def final_text(result: dict) -> str:
     messages = result.get("messages", [])
     if not messages:
-        print(result)
-        return
-    content = getattr(messages[-1], "content", messages[-1])
-    print(content)
+        return message_text(result)
+    for message in reversed(messages):
+        if isinstance(message, AIMessage):
+            text = message_text(message.content)
+            if text:
+                return text
+    for message in reversed(messages):
+        if isinstance(message, ToolMessage):
+            text = message_text(message.content)
+            if text:
+                return text
+    return ""
+
+
+def print_final(result: dict) -> None:
+    text = final_text(result)
+    if text:
+        print(text)
+    else:
+        print(
+            "The agent stopped without producing a final response. "
+            "No calendar changes are assumed; please retry with --debug."
+        )
 
 
 async def run(message: str, thread_id: str, model: str | None) -> None:

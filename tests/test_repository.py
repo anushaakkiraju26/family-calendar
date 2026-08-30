@@ -150,3 +150,93 @@ def test_update_rejects_assigning_same_parent_to_overlapping_events(tmp_path):
 
     unchanged = repository.list_events("family-1", child_id="child-2")[0]
     assert unchanged.assigned_parent_id is None
+
+
+def test_vikram_structured_availability_is_enforced(tmp_path):
+    repository = CalendarRepository(str(tmp_path / "test.db"))
+    rules = repository.list_parent_availability("family-1", "vikram")
+    assert [rule.day_of_week for rule in rules] == [1, 2, 3]
+    conflicts = repository.check_parent_availability(
+        "family-1", "vikram",
+        datetime(2026, 9, 1, 10, tzinfo=timezone(timedelta(hours=-7))),
+        datetime(2026, 9, 1, 11, tzinfo=timezone(timedelta(hours=-7))),
+    )
+    assert conflicts[0]["kind"] == "parent_unavailable"
+
+
+def test_transportation_conflicts_detect_overlap_and_travel_buffer(tmp_path):
+    repository = CalendarRepository(str(tmp_path / "test.db"))
+    zone = timezone(timedelta(hours=-7))
+    result = repository.check_transportation_conflicts("family-1", [
+        {"requirement_id": "leg-1", "required_start": datetime(2026, 9, 5, 10, 0, tzinfo=zone).isoformat(),
+         "required_end": datetime(2026, 9, 5, 10, 15, tzinfo=zone).isoformat(),
+         "assigned_parent_id": "parent-1", "location": "School"},
+        {"requirement_id": "leg-2", "required_start": datetime(2026, 9, 5, 10, 25, tzinfo=zone).isoformat(),
+         "required_end": datetime(2026, 9, 5, 10, 40, tzinfo=zone).isoformat(),
+         "assigned_parent_id": "parent-1", "location": "Music School"},
+    ], travel_buffer_minutes=20)
+    assert result["conflicts"][0]["kind"] == "insufficient_travel_time"
+
+
+def test_candidate_generator_ranks_conflict_free_split_assignments(tmp_path):
+    repository = CalendarRepository(str(tmp_path / "test.db"))
+    first = create(repository)
+    second = repository.create_event(EventCreate(
+        family_id="family-1", title="Music", start_at=first.start_at,
+        end_at=first.end_at, child_id="child-2", idempotency_key="candidate-music",
+        pickup_required=True,
+    ))
+    result = repository.generate_schedule_candidates(
+        "family-1", [first.id, second.id], ["parent-1", "parent-2"], 3
+    )
+    assert result.recommended_candidate_id is not None
+    recommended = next(
+        candidate for candidate in result.candidates
+        if candidate.candidate_id == result.recommended_candidate_id
+    )
+    assert recommended.conflicts == []
+    assert len({item.assigned_parent_id for item in recommended.assignments}) == 2
+    assert all(item.expected_version == 1 for item in recommended.assignments)
+    assert result.calendar_fingerprint
+
+
+def test_candidate_expected_version_rejects_stale_application(tmp_path):
+    repository = CalendarRepository(str(tmp_path / "test.db"))
+    event = create(repository)
+    candidate = repository.generate_schedule_candidates(
+        "family-1", [event.id], ["parent-1"], 1
+    ).candidates[0]
+    repository.update_event(
+        "family-1", event.id, EventChanges(location="Updated Field"), event.version
+    )
+    with pytest.raises(ValueError, match="version conflict"):
+        repository.update_event(
+            "family-1", event.id,
+            EventChanges(assigned_parent_id="parent-1"),
+            candidate.assignments[0].expected_version,
+        )
+
+
+def test_deterministic_review_respects_event_dates(tmp_path):
+    repository = CalendarRepository(str(tmp_path / "test.db"))
+    first = create(repository)
+    next_day = repository.create_event(EventCreate(
+        family_id="family-1", title="Volunteer",
+        start_at=first.start_at + timedelta(days=1, minutes=-30),
+        end_at=first.end_at + timedelta(days=1, minutes=-30),
+        child_id="child-2", location="School",
+        idempotency_key="next-day-volunteer",
+    ))
+    candidate = {
+        "candidate_id": "option-date-safe",
+        "assignments": [
+            {"event_id": first.id, "expected_version": first.version,
+             "assigned_parent_id": "parent-1"},
+            {"event_id": next_day.id, "expected_version": next_day.version,
+             "assigned_parent_id": "parent-1"},
+        ],
+        "conflicts": [], "warnings": [],
+    }
+    review = repository.review_schedule_candidate("family-1", candidate)
+    assert review["status"] == "approved"
+    assert review["blocking_conflicts"] == []

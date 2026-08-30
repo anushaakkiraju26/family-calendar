@@ -10,9 +10,9 @@ from typing import Any
 
 from deepagents import create_deep_agent
 from deepagents.backends import CompositeBackend, FilesystemBackend, StoreBackend
-from langchain_groq import ChatGroq
 from langchain_core.tools import StructuredTool
 from langchain_mcp_adapters.client import MultiServerMCPClient
+from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.store.memory import InMemoryStore
 
@@ -23,6 +23,7 @@ from .prompts import (
     INTAKE_PROMPT,
     REMINDER_PROMPT,
     SCHEDULE_REVIEWER_PROMPT,
+    TRANSPORTATION_PROMPT,
     WEEKLY_PLANNER_PROMPT,
 )
 
@@ -44,7 +45,7 @@ def mcp_connection() -> dict[str, dict[str, Any]]:
         "FAMILY_ACTIVITY_DB": os.getenv(
             "FAMILY_ACTIVITY_DB",
             str(PROJECT_ROOT / "data" / "family_activity.db"),
-        )
+        ),
     }
     return {
         "family_activity": {
@@ -65,7 +66,7 @@ def select_tools(tools: list[Any], *names: str) -> list[Any]:
 
 
 def stringify_tool_result(result: Any) -> str:
-    """Flatten LangChain MCP content blocks for Groq tool-message compatibility."""
+    """Flatten LangChain MCP content blocks for model tool-message compatibility."""
     if isinstance(result, str):
         return result
     if isinstance(result, list):
@@ -79,7 +80,7 @@ def stringify_tool_result(result: Any) -> str:
     return json.dumps(result, default=str)
 
 
-def groq_compatible_tool(tool: Any) -> StructuredTool:
+def model_compatible_tool(tool: Any) -> StructuredTool:
     """Preserve an MCP tool schema while returning plain string content."""
     async def invoke_tool(**arguments: Any) -> str:
         result = await tool.ainvoke(arguments)
@@ -97,7 +98,7 @@ async def build_family_agent(model: Any | None = None):
     """Load MCP tools and construct the Family Coordinator Deep Agent."""
     client = MultiServerMCPClient(mcp_connection())
     discovered_tools = await client.get_tools()
-    tools = [groq_compatible_tool(tool) for tool in discovered_tools]
+    tools = [model_compatible_tool(tool) for tool in discovered_tools]
 
     calendar_tools = select_tools(
         tools, "create_event", "list_events", "update_event",
@@ -110,6 +111,11 @@ async def build_family_agent(model: Any | None = None):
     weekly_planning_tools = select_tools(
         tools, "list_events", "check_conflicts", "list_school_events",
         "check_school_conflicts",
+    )
+    transportation_tools = select_tools(
+        tools, "list_parent_availability", "check_parent_availability",
+        "check_transportation_conflicts", "generate_schedule_candidates",
+        "review_schedule_candidate",
     )
     reminder_tools = select_tools(
         tools, "list_events", "list_reminders", "schedule_reminder",
@@ -172,13 +178,23 @@ async def build_family_agent(model: Any | None = None):
             "skills": [skills_path],
         },
         {
+            "name": "transportation-agent",
+            "description": (
+                "Generates and ranks parent assignments, pickup/drop-off coverage, "
+                "availability checks, and travel-feasible weekly candidates."
+            ),
+            "system_prompt": TRANSPORTATION_PROMPT,
+            "tools": transportation_tools,
+            "skills": [skills_path],
+        },
+        {
             "name": "schedule-reviewer",
             "description": (
                 "Independently reviews a weekly plan and requires revision when "
                 "conflicts, missing details, or unsafe times remain."
             ),
             "system_prompt": SCHEDULE_REVIEWER_PROMPT,
-            "tools": [],
+            "tools": select_tools(tools, "review_schedule_candidate"),
             "skills": [skills_path],
         },
         {
@@ -196,12 +212,17 @@ async def build_family_agent(model: Any | None = None):
     else:
         model_name = model or os.getenv(
             "FAMILY_ACTIVITY_MODEL",
-            "openai/gpt-oss-20b",
+            "nvidia/Nemotron-3-Nano-Omni",
         )
-        if model_name.startswith("groq:"):
-            model_name = model_name.removeprefix("groq:")
-        chat_model = ChatGroq(
+        if model_name.startswith("nebius:"):
+            model_name = model_name.removeprefix("nebius:")
+        chat_model = ChatOpenAI(
             model=model_name,
+            api_key=os.getenv("NEBIUS_API_KEY"),
+            base_url=os.getenv(
+                "NEBIUS_BASE_URL",
+                "https://api.tokenfactory.us-central1.nebius.com/v1/",
+            ),
             temperature=0,
             timeout=30,
             max_retries=int(os.getenv("FAMILY_ACTIVITY_MAX_RETRIES", "2")),

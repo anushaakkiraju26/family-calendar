@@ -12,9 +12,9 @@ pytest
 The tests include real MCP subprocess discovery and invocation, a mutation that
 must pause for LangGraph approval before changing SQLite, repository lifecycle
 and conflict rules, reminder-draft validation, state isolation, and CLI error
-formatting. The deterministic fake chat model avoids Groq usage while preserving
+formatting. The deterministic fake chat model avoids Nebius usage while preserving
 the actual Deep Agent, LangGraph interrupt, MCP subprocess, and SQLite layers.
 
 Before recording the demo, run selected prompts from `cases.json` with the live
-Groq-backed CLI and record observed tool calls and outcomes in the project
+Nebius-backed CLI and record observed tool calls and outcomes in the project
 documentation. Live model behavior is intentionally not part of CI.

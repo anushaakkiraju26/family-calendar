@@ -97,7 +97,7 @@
   },
   {
     "id": "provider-rate-limit",
-    "prompt": "Show today's activities for family-1 while Groq returns HTTP 429",
+    "prompt": "Show today's activities for family-1 while Nebius returns HTTP 429",
     "expected_tools": [],
     "approval": "none",
     "expected_outcome": "A concise retry message is shown without a Python traceback or success claim.",
@@ -124,5 +124,28 @@
     "expected_tools": ["list_school_events", "check_school_conflicts"],
     "approval": "none for planning-only review",
     "expected_outcome": "The plan highlights the 1:01 PM early dismissal and requests or proposes supervision coverage."
+  },
+  {
+    "id": "hero-weekly-candidates",
+    "prompt": "Coordinate next week for family-1. Check school events, resolve activity and transportation conflicts, generate three schedule options for parent-1, parent-2, and vikram, recommend the best plan, and draft reminders. Do not apply changes until I approve.",
+    "expected_tools": ["list_events", "list_school_events", "list_parent_availability", "generate_schedule_candidates", "check_transportation_conflicts"],
+    "approval": "none while planning; grouped approval only after the parent selects an reviewed option",
+    "expected_outcome": "The coordinator produces ranked deterministic candidates, the reviewer audits the recommended option, and no calendar state changes."
+  },
+  {
+    "id": "vikram-availability-rule",
+    "prompt": "Assign Vikram to a Tuesday 10 AM pickup for family-1.",
+    "expected_tools": ["check_parent_availability", "check_transportation_conflicts"],
+    "approval": "none while conflict remains",
+    "expected_outcome": "Structured availability rejects the assignment because Vikram is unavailable Tuesday through Thursday from 9:30 AM to 4 PM.",
+    "failure_path": true
+  },
+  {
+    "id": "stale-weekly-option",
+    "prompt": "Apply option 1 after one of its events was updated.",
+    "expected_tools": ["list_events"],
+    "approval": "none for stale plan",
+    "expected_outcome": "The event version mismatch causes the option to be regenerated instead of applied.",
+    "failure_path": true
   }
 ]

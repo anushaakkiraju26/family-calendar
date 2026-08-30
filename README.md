@@ -10,6 +10,7 @@ server for a shared family calendar.
 - Calendar Agent manages event creation, updates, deletion, and restoration
 - Conflict Agent checks child, assigned-parent, school-hour, and dated school-calendar overlaps
 - Weekly Planner combines family events, school dates, and parent assignments
+- Transportation Agent generates and ranks parent, pickup, and drop-off options
 - Schedule Reviewer audits the whole weekly plan and requests revision when needed
 - Reminder Agent schedules and cancels reminders
 - Human approval protects all calendar and reminder mutations
@@ -37,23 +38,54 @@ to coordinate or review a whole week uses the full multi-agent workflow:
 
 1. Intake Agent normalizes the goal and date range.
 2. Weekly Planner loads family events and the Reed Elementary calendar.
-3. Conflict checks cover children, assigned parents, regular school hours,
+3. Transportation Agent loads structured parent availability and generates
+   three deterministically scored assignment candidates.
+4. Conflict checks cover children, assigned parents, transportation coverage,
+   travel buffers, regular school hours,
    timed school events, closures, and early dismissals.
-4. Schedule Reviewer audits the complete proposal.
-5. A plan with blocking findings returns to the Weekly Planner for revision and
+5. Schedule Reviewer audits the recommended candidate and its calendar fingerprint.
+6. A plan with blocking findings returns to the Weekly Planner and Transportation
+   Agent for revision and
    is reviewed again.
-6. Reminder Agent drafts day-of reminder records for an approved proposal.
-7. Proposed mutations are presented together for human review. Independent
+7. Reminder Agent drafts day-of reminder records for an approved proposal.
+8. The parent selects an option; its event versions are rechecked before any write.
+9. Proposed mutations are presented together for human review. Independent
    tool calls are emitted together so LangGraph can show a grouped approval set.
 
 Shared artifacts for this workflow are `/work/weekly_schedule.json`,
 `/work/assignment_proposal.json`, `/reviews/weekly_schedule_review.json`, and
-`/work/reminder_plan.json`. These files coordinate the run; SQLite remains the
+`/work/reminder_plan.json`. Ranked candidates and transportation findings are
+stored in `/work/transportation_plan.json`. These files coordinate the run; SQLite remains the
 durable source of truth.
 
 Example:
 
     family-activity-agent "Coordinate next week for family-1, identify conflicts, propose parent assignments, and draft day-of reminders"
+
+Hero workflow:
+
+    family-activity-agent "Coordinate next week for family-1. Check school events, resolve activity and transportation conflicts, generate three schedule options for parent-1, parent-2, and vikram, recommend the best plan, and draft reminders. Do not apply changes until I approve."
+
+For a repeatable course demonstration, seed an isolated database and point one
+CLI invocation at it:
+
+    python tools/seed_hero_demo.py
+
+Use the exact Monday-Sunday dates printed by the seeder in the request. For
+example, when it prints `2026-08-31 through 2026-09-06`:
+
+    FAMILY_ACTIVITY_DB=data/hero_demo.db family-activity-agent "Coordinate August 31 through September 6, 2026 for family-1. Read the existing calendar and school events, resolve activity and transportation conflicts, generate three schedule options for parent-1, parent-2, and vikram, recommend the best plan, and draft reminders. This is planning only; do not apply changes."
+
+The demo database is separate from `data/family_activity.db` and is ignored by
+Git. It contains overlapping activities for different children, transportation
+requirements at different locations, and a volunteer commitment during
+Vikram's structured work unavailability.
+
+The candidate scheduler is deterministic: it uses stored event versions,
+parent availability rules, event overlaps, pickup/drop-off requirements, and a
+20-minute different-location travel buffer. The LLM explains the alternatives;
+it does not invent their scores. Selecting an old option after an event changes
+fails through the existing `expected_version` guard.
 
 ## School calendar
 
@@ -77,6 +109,11 @@ The school-calendar tools are read-only:
 - check_conflicts
 - list_school_events
 - check_school_conflicts
+- list_parent_availability
+- check_parent_availability
+- check_transportation_conflicts
+- generate_schedule_candidates
+- review_schedule_candidate
 - schedule_reminder
 - schedule_day_of_reminders
 - list_reminders
@@ -87,6 +124,9 @@ database access so PostgreSQL can replace it later.
 Same-child and same-parent overlaps are rejected transactionally by the
 repository during event creation and schedule-related updates. The agent's
 conflict check improves the explanation but is not the enforcement boundary.
+Vikram's Tuesday-through-Thursday 9:30 AM-4:00 PM unavailability is also stored
+as structured SQLite rules so candidate generation enforces it independently
+of model reasoning.
 
 ## Setup
 
@@ -96,10 +136,11 @@ conflict check improves the explanation but is not the enforcement boundary.
     pip install -e '.[dev]'
     pytest
 
-Copy .env.example to .env and add a Groq API key from the Groq Console.
+Copy `.env.example` to `.env` and add a Nebius Token Factory API key.
 
-    GROQ_API_KEY=your-groq-key
-    FAMILY_ACTIVITY_MODEL=openai/gpt-oss-20b
+    NEBIUS_API_KEY=your-nebius-key
+    NEBIUS_BASE_URL=https://api.tokenfactory.us-central1.nebius.com/v1/
+    FAMILY_ACTIVITY_MODEL=nvidia/Nemotron-3-Nano-Omni
 
 ## Run the Deep Agent
 
@@ -142,7 +183,7 @@ tokens for destructive and notification-related operations.
 
 Run `pytest` for the offline evaluation suite. It uses a deterministic fake chat
 model for real Deep Agent + LangGraph + MCP + SQLite integration tests, so it
-does not consume Groq quota. `evaluations/cases.json` contains the live/manual
+does not consume Nebius quota. `evaluations/cases.json` contains the live/manual
 prompt matrix, expected tools, approval points, outcomes, and failure cases used
 for the course demo.
 
