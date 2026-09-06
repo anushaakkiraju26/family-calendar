@@ -91,6 +91,9 @@ def test_coordinator_requires_deep_weekly_workflow_and_review_loop():
     assert "generate_schedule_candidates" in COORDINATOR_PROMPT
     assert "expected_version" in COORDINATOR_PROMPT
     assert "HARD COMPLETION GATE" in COORDINATOR_PROMPT
+    assert "DATA-HANDOFF RULE" in COORDINATOR_PROMPT
+    assert "Never ask the parent for information" in COORDINATOR_PROMPT
+    assert "already returned during this run" in COORDINATOR_PROMPT
     assert "Never describe a plan" in COORDINATOR_PROMPT
     assert "reviewed without the review artifact" in COORDINATOR_PROMPT
     assert "Never suggest assigning one parent to simultaneous events" in COORDINATOR_PROMPT
