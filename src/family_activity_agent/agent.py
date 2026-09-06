@@ -494,7 +494,7 @@ async def build_family_agent(model: Any | None = None):
                 "https://api.tokenfactory.us-central1.nebius.com/v1/",
             ),
             temperature=0,
-            timeout=30,
+            timeout=60,
             max_retries=int(os.getenv("FAMILY_ACTIVITY_MAX_RETRIES", "2")),
         )
 

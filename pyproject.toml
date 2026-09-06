@@ -18,7 +18,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8,<9"]
+dev = ["pytest>=8,<9", "openpyxl>=3,<4", "pandas>=2,<3"]
 
 [project.scripts]
 family-activity-mcp = "family_activity_mcp.server:main"

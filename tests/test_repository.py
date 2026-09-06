@@ -7,7 +7,9 @@ from family_activity_mcp.repository import CalendarRepository
 
 
 def create(repository):
-    start = datetime(2026, 9, 1, 16, tzinfo=timezone.utc)
+    start = (datetime.now(timezone.utc) + timedelta(days=30)).replace(
+        hour=16, minute=0, second=0, microsecond=0
+    )
     return repository.create_event(EventCreate(
         family_id="family-1", title="Soccer", start_at=start,
         end_at=start + timedelta(hours=1), child_id="leo",
