@@ -1,28 +1,21 @@
-"""Build the Week 4 evaluation tracker spreadsheet from evaluations/cases.json.
+"""Build the evaluation tracker spreadsheet from evaluations/cases.json.
 
-Structure follows the reference Week 4 materials directly, not a generic
-template:
-  https://github.com/The-Gen-Academy/4A-Customer-Support-Agent-Evaluation
-  https://github.com/The-Gen-Academy/Mastering-Agentic-AI-Week4-Session1
-      /AI-Evals-Principles/routing_agent_evals
-
-That means two real changes from a "textbook" eval sheet:
+Two deliberate departures from a "textbook" eval sheet:
   1. The coordinator's routing decision (fast path vs. deep weekly workflow
      vs. outing workflow vs. ask-for-clarification) is scored as a real
      classification problem - per-category precision/recall/F1, not one
      blended "trajectory correctness >= 90%" number. A model that always
      guesses the majority class can look good on a single aggregate score
      while catching zero real failures; per-category numbers don't hide that.
-  2. Failure analysis follows the reference workbook's six-step shape:
-     tag failures -> cluster into named categories -> label every failing
-     row -> pick the single costliest cluster and make ONE focused fix ->
-     optional LLM-as-judge run -> optional judge calibration. This sheet
-     covers those six steps. Re-running the eval and reporting the
-     before/after delta is separate, notebook-side work (matching how the
-     reference splits "spreadsheet does failure analysis" from "notebook
-     does baseline + revised runs").
+  2. Failure analysis follows a six-step shape: tag failures -> cluster into
+     named categories -> label every failing row -> pick the single
+     costliest cluster and make ONE focused fix -> optional LLM-as-judge
+     run -> optional judge calibration. This sheet covers those six steps.
+     Re-running the eval and reporting the before/after delta is separate,
+     notebook-side work ("spreadsheet does failure analysis", "notebook does
+     baseline + revised runs").
 
-Generates evaluations/week4_eval_tracker.xlsx with:
+Generates evaluations/eval_tracker.xlsx with:
   - Golden Dataset: every case in cases.json, with scenario_type, severity,
     and target_workflow_category (the classification label used below).
   - Metrics: the eight-metric framework, judge method, and pass bar.
@@ -57,7 +50,7 @@ from eval_common import (  # noqa: E402
 )
 
 CASES_PATH = PROJECT_ROOT / "evaluations" / "cases.json"
-OUTPUT_PATH = PROJECT_ROOT / "evaluations" / "week4_eval_tracker.xlsx"
+OUTPUT_PATH = PROJECT_ROOT / "evaluations" / "eval_tracker.xlsx"
 RESULTS_PATH = PROJECT_ROOT / "evaluations" / "results_baseline.csv"
 
 HEADER_FILL = PatternFill(start_color="1F2A44", end_color="1F2A44", fill_type="solid")
@@ -80,8 +73,7 @@ METRICS = [
             "Replaces a single 'trajectory correctness' percentage. A model "
             "that always takes the fast path can look fine on aggregate "
             "accuracy while missing every deep-weekly-workflow case - "
-            "per-category numbers don't hide that, matching how "
-            "routing_agent_evals.ipynb scores its 5-way ticket router."
+            "per-category numbers don't hide that."
         ),
     ),
     (
@@ -124,7 +116,7 @@ METRICS = [
         "Cost / Latency",
         "Code-based from LangSmith run metadata",
         "< 90s for weekly-coordination cases, < 10s for fast-path cases",
-        "Paired with the quality metrics per the handout's own pairing rule.",
+        "Paired with the quality metrics per the evaluation's own pairing rule.",
     ),
     (
         "Cost per case (tokens)",
@@ -288,7 +280,7 @@ def build_golden_dataset_sheet(wb: Workbook, cases: list[dict]) -> None:
         counts[scenario] = counts.get(scenario, 0) + 1
     total = len(core_cases)
     summary_row = ws.max_row + 2
-    ws.cell(row=summary_row, column=1, value="Core Golden scenario mix vs. handout target (50/30/15/5):").font = SECTION_FONT
+    ws.cell(row=summary_row, column=1, value="Core Golden scenario mix vs. target (50/30/15/5):").font = SECTION_FONT
     target = {"happy_path": 50, "edge_case": 30, "known_failure": 15, "adversarial": 5}
     for i, key in enumerate(("happy_path", "edge_case", "known_failure", "adversarial")):
         pct = round(100 * counts.get(key, 0) / total) if total else 0

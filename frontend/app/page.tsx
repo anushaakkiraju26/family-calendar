@@ -154,7 +154,7 @@ function EventDetails({item,onClose,onAddGuest,onAddReminder,onRemoveGuest}:{ite
     <div className="guest-section reminder-builder"><div className="modal-heading"><div><p className="eyebrow">REMINDERS</p><h3>Remind a guest</h3></div></div>
       {guests.length?<form onSubmit={onAddReminder}><select name="guestId" aria-label="Guest">{guests.map(g=><option value={g.id} key={g.id}>{g.name}</option>)}</select><select name="timing" aria-label="Reminder timing"><option>1 day before</option><option>2 hours before</option><option>1 hour before</option><option>30 minutes before</option></select><select name="channel" aria-label="Reminder channel"><option>Text</option><option>Email</option></select><button>Save reminder</button></form>:<p className="guest-empty">Add a guest first, then choose when and how to remind them.</p>}
       {reminders.length>0&&<div className="saved-reminders">{reminders.map(reminder=>{const guest=guests.find(g=>g.id===reminder.guestId);return <div key={reminder.id}><span>◌</span><p><strong>{guest?.name||'Guest'} · {reminder.channel}</strong><small>{reminder.timing} · Saved draft</small></p></div>})}</div>}
-      <p className="delivery-note">Reminders are saved as drafts in this version; no text or email is sent yet.</p>
+      <p className="delivery-note">You can set up text or WhatsApp to send these; this version only drafts messages.</p>
     </div></>}
   </section>
 }

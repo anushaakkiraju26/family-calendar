@@ -1,6 +1,6 @@
 # Evaluation suite
 
-`cases.json` is the course-facing behavior matrix. It records natural-language
+`cases.json` is the golden-dataset behavior matrix. It records natural-language
 requests, expected MCP tools, approval boundaries, outcomes, and negative
 scenarios. A negative scenario is expected to exercise safe rejection or
 recovery; it is not itself an observed agent failure.
@@ -25,7 +25,7 @@ The family-outing case additionally requires `YDC_API_KEY`. It verifies that
 calendar and school checks happen before one `you-search` MCP call, that results
 retain source URLs, and that research never creates an event automatically.
 
-## Week 4 evaluation tooling
+## Evaluation tooling
 
 - `eval_common.py` - shared case metadata (scenario_type, severity,
   target_workflow_category) imported by both files below, so they can't drift.
@@ -68,7 +68,7 @@ retain source URLs, and that research never creates an event automatically.
   date, and fixture coverage for the latest baseline.
 - `results_pre_step4.csv` preserves the baseline used for the prompt experiment;
   `results_step4.csv` contains the post-change run used for the Step 4 delta.
-- `../tools/build_eval_tracker.py` - builds `week4_eval_tracker.xlsx` from
+- `../tools/build_eval_tracker.py` - builds `eval_tracker.xlsx` from
   `cases.json`, and from `results_baseline.csv` when present (falls back to
   informal spot-check notes otherwise). Re-run after either input changes:
 

@@ -1,4 +1,4 @@
-"""Live baseline runner for the Week 4 golden dataset.
+"""Live baseline runner for the golden dataset.
 
 For each ready case: builds a fresh Family Coordinator agent against an
 isolated database, invokes it with the case prompt, auto-decides any
@@ -311,11 +311,11 @@ async def run_case(case: dict, thread_id: str, initial_timeout: int | None = Non
     approval_decision = APPROVAL_OVERRIDES.get(case_id, "approve")
 
     with trace(
-        name=f"week4-eval:{case_id}",
+        name=f"eval:{case_id}",
         run_type="chain",
-        project_name=os.getenv("LANGSMITH_PROJECT", "family-activity-agent-week4-eval"),
+        project_name=os.getenv("LANGSMITH_PROJECT", "family-activity-agent-eval"),
         inputs={"prompt": case["prompt"]},
-        tags=["family-activity-agent", "week4-eval", "baseline"],
+        tags=["family-activity-agent", "eval", "baseline"],
         metadata={
             "case_id": case_id,
             "target_workflow_category": target,
@@ -331,8 +331,8 @@ async def run_case(case: dict, thread_id: str, initial_timeout: int | None = Non
         config = {
             "configurable": {"thread_id": thread_id},
             "recursion_limit": 60,
-            "run_name": f"week4-eval-{case_id}",
-            "tags": ["family-activity-agent", "week4-eval", "baseline"],
+            "run_name": f"eval-{case_id}",
+            "tags": ["family-activity-agent", "eval", "baseline"],
             "metadata": {"case_id": case_id, "target_workflow_category": target},
         }
         started = time.monotonic()
@@ -514,7 +514,7 @@ async def main(
     # Hard override, not setdefault: keep eval traces out of the main mvp
     # project regardless of what .env sets, since LangChain's own tracer can
     # read this env var independently of the trace() root run's project_name.
-    os.environ["LANGSMITH_PROJECT"] = "family-activity-agent-week4-eval"
+    os.environ["LANGSMITH_PROJECT"] = "family-activity-agent-eval"
     cases = {
         case["id"]: case
         for case in json.loads(CASES_PATH.read_text())

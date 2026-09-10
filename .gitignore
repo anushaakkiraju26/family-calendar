@@ -34,6 +34,6 @@ evaluations/week4_eval_tracker_Anusha_backup_2026-09-05.xlsx
 outputs/
 output/
 
-# large binary generated from a private course reference file; not reproducible from this repo
+# large binary generated from a private reference template file; not reproducible from this repo
 docs/Family_Activity_Deep_Agent_Solution_Kit.docx
 tools/build_reference_style_documentation.py

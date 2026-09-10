@@ -110,7 +110,7 @@ def add_title(doc):
 
     subtitle = doc.add_paragraph()
     subtitle.paragraph_format.space_after = Pt(16)
-    set_run_font(subtitle.add_run("Week 3 Project — Solution Documentation (Code Track)"), size=12, color="555555")
+    set_run_font(subtitle.add_run("Solution Documentation"), size=12, color="555555")
 
     summary = doc.add_paragraph()
     set_run_font(summary.add_run("Implementation status: "), bold=True)
@@ -186,7 +186,7 @@ def build_docx():
 
     doc.add_heading("1. Executive Summary", level=1)
     doc.add_paragraph(
-        "This project implements a family activity coordination agent for parents. It accepts natural-language calendar requests through a command-line interface, resolves dates in the family timezone, delegates complex work to specialist subagents, calls a standalone MCP calendar server, stores durable state in SQLite, detects scheduling conflicts, and pauses for human approval before every write action. The MVP drafts and stores reminder messages; it intentionally does not send SMS messages."
+        "This project implements a family activity coordination agent for parents. It accepts natural-language calendar requests through a command-line interface, resolves dates in the family timezone, delegates complex work to specialist subagents, calls a standalone MCP calendar server, stores durable state in SQLite, detects scheduling conflicts, and pauses for human approval before every write action. You can set up text or WhatsApp to send the reminders it prepares; currently the project only drafts those messages."
     )
 
     doc.add_heading("2. Problem Statement", level=1)
@@ -213,8 +213,8 @@ def build_docx():
     ])
     doc.add_heading("Out of scope", level=2)
     add_bullets(doc, [
-        "Actual SMS delivery through Twilio or another messaging provider.",
-        "Live synchronization between the separate Kinday frontend snapshot and SQLite.",
+        "Real text/WhatsApp delivery of drafted reminders (e.g., via Twilio).",
+        "Live synchronization between the frontend/ prototype and SQLite.",
         "Authentication, production tenant identity, and phone-number management.",
         "Calendar synchronization with Google Calendar or Apple Calendar.",
         "Recurring-event series editing and live traffic-aware route optimization.",
@@ -300,7 +300,7 @@ SQLite: events + reminders + availability_rules + audit_logs""")
     ], [1.7, 0.65, 3.15, 1.0])
 
     doc.add_heading("9. Data and Persistence", level=1)
-    doc.add_paragraph("No external dataset is required. The application uses synthetic course-demo family data stored in four SQLite tables.")
+    doc.add_paragraph("No external dataset is required. The application uses synthetic demo family data stored in four SQLite tables.")
     add_table(doc, ["Table", "Durable information"], [
         ["events", "Family-scoped event details, assigned child/parent, status, version, idempotency key, deletion metadata."],
         ["reminders", "Recipient, scheduled time, channel, drafted message body, and status."],
@@ -359,7 +359,7 @@ cp .env.example .env
 # Add NEBIUS_API_KEY. Optionally add LANGSMITH_API_KEY.
 pytest
 family-activity-agent 'Show activities today for family-1'""")
-    doc.add_paragraph("Optional LangSmith tracing uses LANGSMITH_TRACING=true and project family-activity-agent-mvp. Course traces should use synthetic names and schedules because traces can contain prompts and tool results.")
+    doc.add_paragraph("Optional LangSmith tracing uses LANGSMITH_TRACING=true and project family-activity-agent-mvp. Traces should use synthetic names and schedules because traces can contain prompts and tool results.")
 
     doc.add_heading("15. Representative Vibe-Coding Prompts and Iterations", level=1)
     add_bullets(doc, [
@@ -400,10 +400,10 @@ family-activity-agent 'Show activities today for family-1'""")
     add_code_block(doc, """UNDERSTAND REQUEST → READ CALENDAR → CHECK POLICY/CONFLICTS
 → HUMAN APPROVAL FOR WRITE → MCP MUTATION → SQLITE + AUDIT LOG
 → VERIFIED RESPONSE → STOP""")
-    doc.add_paragraph("The MVP stops after saving calendar state or reminder drafts. It does not send messages or perform external commitments. A separate hosted Kinday frontend displays a snapshot of the seeded family calendar, but it does not synchronize live with SQLite. Future extensions include Twilio delivery, authenticated family membership, live Kinday synchronization, Google/Apple Calendar synchronization, recurring events, and production PostgreSQL.")
+    doc.add_paragraph("The MVP stops after saving calendar state or reminder drafts. You can set up text or WhatsApp to send these; currently the project only drafts messages. The frontend/ prototype displays a snapshot of the seeded family calendar, but it does not synchronize live with SQLite. Future extensions include wiring up real message delivery, authenticated family membership, live frontend synchronization, Google/Apple Calendar synchronization, recurring events, and production PostgreSQL.")
 
-    doc.core_properties.title = "Family Activity Deep Agent — Week 3 Project Documentation"
-    doc.core_properties.subject = "Agentic AI Systems course project"
+    doc.core_properties.title = "Family Activity Deep Agent — Project Documentation"
+    doc.core_properties.subject = "Personal project: agentic family-scheduling assistant"
     doc.core_properties.author = "Family Activity Agent Project"
     doc.save(DOCX_PATH)
 
@@ -422,11 +422,11 @@ def build_notebook():
 
 A hands-on tutorial of the **Deep Agents** framework with a standalone **MCP tool server** and durable **SQLite** calendar state.
 
-We build a family coordinator that creates, reads, updates, deletes, and restores activities; detects child and parent conflicts; and stores reviewable reminder drafts.
+I built a family coordinator that creates, reads, updates, deletes, and restores activities; detects child and parent conflicts; and stores reviewable reminder drafts.
 
-> **Draft-only messaging.** The MVP stores reminder text but never sends SMS. Every calendar or reminder mutation pauses for parent approval.
+> **Messaging.** You can set up text or WhatsApp to send these reminders; currently the project only drafts messages. Every calendar or reminder mutation pauses for parent approval.
 
-This notebook follows the same teaching sequence as the course's GTM Deep Agent example, adapted to the family-calendar use case and the project's real implementation."""),
+This notebook follows a hands-on tutorial structure in the same spirit as a GTM-style Deep Agent walkthrough, adapted to the family-calendar use case and this project's real implementation."""),
         md("""## Architecture at a glance
 
 ```
@@ -701,20 +701,20 @@ print("\\nTry this deep workflow in the CLI:\\n", weekly_prompt)
         md("""## 13. Seeded month and Kinday calendar
 
 `tools/seed_month_demo.py` idempotently creates 21 realistic `family-1` events
-from August 30 through September 29, 2026. The separate hosted Kinday frontend
+from August 30 through September 29, 2026. The `frontend/` Kinday prototype
 shows a snapshot of those records in month, week, day, and list views. SQLite
-remains authoritative; the hosted snapshot does not update automatically after
-later CLI mutations."""),
+remains authoritative; the frontend snapshot does not update automatically
+after later CLI mutations (see `frontend/README.md`)."""),
         code("""seed_command = (
     "python tools/seed_month_demo.py --database data/family_activity.db "
     "--start 2026-08-29"
 )
 print("Seed the demo month with:\\n", seed_command)
-print("Kinday: https://kinday-family-planner.anusha-akkiraj319688.chatgpt.site")
+print("Run the Kinday prototype with: cd frontend && npm install && npm run dev")
 """),
         md("""## Recap
 
-You built a family activity system that demonstrates the course's core agentic requirements:
+I built a family activity system that demonstrates these core agentic patterns:
 
 - A **Deep Agent coordinator** that routes and delegates.
 - Eight **specialist subagents**, including outing research, transportation planning, and independent review.
@@ -722,11 +722,11 @@ You built a family activity system that demonstrates the course's core agentic r
 - A **review/revision loop** with shared weekly-plan artifacts.
 - **Human approval** before every write.
 - **Deterministic Python safeguards** for past times, conflicts, versions, family scope, availability, transportation, candidate scoring, and idempotency.
-- **Draft-only reminders** with no external messaging side effects.
+- **Reminders drafted for text or WhatsApp delivery** — the drafting works today; the actual send step isn't wired up yet.
 - **SQLite persistence across fresh CLI sessions**, with no need for conversational memory.
 - `recursion_limit` as the safety backstop.
 
-**Where to take it next:** add live Kinday/SQLite synchronization, authenticated family membership, Google Calendar synchronization, and an optional Twilio worker after the draft-only MVP is accepted."""),
+**Where to take it next:** add live frontend/SQLite synchronization, authenticated family membership, Google Calendar synchronization, and real text/WhatsApp delivery (e.g., via Twilio) for the drafted reminders."""),
     ]
 
     notebook = {

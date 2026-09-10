@@ -1,4 +1,4 @@
-"""Shared case metadata for Week 4 evaluation tooling.
+"""Shared case metadata for the evaluation tooling.
 
 Single source of truth for scenario_type, severity, and
 target_workflow_category, imported by both tools/build_eval_tracker.py
@@ -7,8 +7,8 @@ never drift apart.
 """
 from __future__ import annotations
 
-# scenario_type per the Week 4 handout's happy/edge/known-failure/adversarial
-# mix. Reflects what each case was *designed* to test, not observed results.
+# scenario_type buckets: happy_path/edge_case/known_failure/adversarial.
+# Reflects what each case was *designed* to test, not observed results.
 SCENARIO_TYPES = {
     "create-future-event": "happy_path",
     "reject-past-event": "known_failure",

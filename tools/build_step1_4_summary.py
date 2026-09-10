@@ -1,7 +1,7 @@
 """Build a clean, standalone Step 1-4 documentation spreadsheet covering
 every fix made across the whole project (the original 2026-09-02/03 fix plus
 all six made on 2026-09-05) - one unified narrative, not spread across dated
-sections like week4_eval_tracker_Anusha.xlsx.
+sections like eval_tracker_Anusha.xlsx.
 
 Four sheets: Step 1 (failure annotations), Step 2 (named categories),
 Step 3 (labeled failures), Step 4 (prompt changes with measured deltas).

@@ -1,7 +1,7 @@
 """Convert evaluations/cases.json into a clean, single-sheet spreadsheet -
 one row per case, enriched with the scenario_type/severity/
 target_workflow_category metadata from eval_common.py, matching the format
-already used in the Golden Dataset tab of week4_eval_tracker_Anusha.xlsx.
+already used in the Golden Dataset tab of eval_tracker_Anusha.xlsx.
 
 Run: python tools/build_cases_spreadsheet.py
 """

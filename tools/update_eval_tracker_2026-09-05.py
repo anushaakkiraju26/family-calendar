@@ -1,4 +1,4 @@
-"""One-time update: extend evaluations/week4_eval_tracker_Anusha.xlsx with the
+"""One-time update: extend evaluations/eval_tracker_Anusha.xlsx with the
 2026-09-05 triage session's findings, in the same format the workbook already
 uses (dated Step 1/2/3/4 blocks), rather than regenerating/overwriting it.
 
@@ -19,7 +19,7 @@ import openpyxl
 from openpyxl.styles import Alignment, Font, PatternFill
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-WORKBOOK_PATH = PROJECT_ROOT / "evaluations" / "week4_eval_tracker_Anusha.xlsx"
+WORKBOOK_PATH = PROJECT_ROOT / "evaluations" / "eval_tracker_Anusha.xlsx"
 
 HEADER_FILL = PatternFill(start_color="1F2A44", end_color="1F2A44", fill_type="solid")
 HEADER_FONT = Font(color="FFFFFF", bold=True)
@@ -187,8 +187,7 @@ def update_step1(wb):
         "(observable cases): 81%. Prior full baselines this session: "
         "9/24 (pre-triage) -> 11/24 (round 1) -> 14/28 (round 2, 4 fixes "
         "applied) -> 17/33 (this run, dataset expanded to 30 + 1 more "
-        "fix). See WEEK4_HANDOVER_2026-09-04.md for the complete "
-        "run-by-run trajectory.",
+        "fix).",
     ], italic=True)
     row += 1
     write_row(ws, row, [
@@ -382,8 +381,7 @@ def update_step2(wb):
         "stale-weekly-option timeouts). Investigated and accepted as a "
         "trade-off after comparing 3 alternative models, all of which "
         "showed real safety violations (skipped approval gates, mutated "
-        "without checking conflicts) despite being faster. See "
-        "WEEK4_HANDOVER_2026-09-04.md, 'Model comparison investigation.'",
+        "without checking conflicts) despite being faster.",
     ], italic=True)
 
 
@@ -512,8 +510,7 @@ def update_step4(wb):
          "of a deterministic tool-backed check - a repeated pattern "
          "across two different tools.",
          "Prompt engineering (3 iterations for vikram, 1 for "
-         "update-event-success - full narrative in "
-         "WEEK4_HANDOVER_2026-09-04.md)",
+         "update-event-success)",
          "Added a TRANSPORTATION AVAILABILITY CHECK workflow step "
          "requiring check_parent_availability AND "
          "check_transportation_conflicts every time for a standalone "

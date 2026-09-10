@@ -1,4 +1,4 @@
-"""Seed an isolated future-week database for the course hero workflow."""
+"""Seed an isolated future-week database for the hero demo workflow."""
 from __future__ import annotations
 
 import argparse

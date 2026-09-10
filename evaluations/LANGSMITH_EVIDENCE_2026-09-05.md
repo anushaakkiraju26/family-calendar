@@ -1,4 +1,4 @@
-# LangSmith Evidence — Week 4 Evaluation (2026-09-05, extended 2026-09-06)
+# LangSmith Evidence — Evaluation (2026-09-05, extended 2026-09-06)
 
 All links below are **public LangSmith share links** (via `client.share_run`)
 — viewable by anyone with the URL, no LangSmith account or workspace access
@@ -6,7 +6,7 @@ required. Every eval run this session was traced under one project:
 
 **Project (requires workspace access — use the public run links below instead
 for anyone outside this workspace):**
-`family-activity-agent-week4-eval`
+`family-activity-agent-eval`
 
 Every row of every `results_*.csv` in `evaluations/` carries the exact
 `langsmith_run_id` for its run, so any case/run pair not listed below can
@@ -18,10 +18,9 @@ already shared).
 
 - **Original baseline** (9/24 strict pass): `evaluations/results_baseline_2026-09-04-pre-triage.csv`
 - **Final baseline** (17/33 strict pass, 30-case dataset): `evaluations/results_baseline.csv`
-- Full run-by-run trajectory and reasoning: `evaluations/WEEK4_HANDOVER_2026-09-04.md`
 - Condensed failure analysis: `evaluations/FAILURE_ANALYSIS_2026-09-05.md`
 
-## Per-fix before/after traces (matches Step 4 of `week4_eval_tracker_Anusha.xlsx`)
+## Per-fix before/after traces (matches Step 4 of `eval_tracker_Anusha.xlsx`)
 
 ### Fix A — Retry after rejection (`approval-rejected`)
 - BEFORE (retries `update_event` after rejection, times out): https://smith.langchain.com/public/eeff12c8-ff60-4d21-9a2e-0248abcc90ab/r

@@ -1,7 +1,7 @@
-# Failure Analysis — Week 4 Evaluation (2026-09-05)
+# Failure Analysis — Evaluation (2026-09-05)
 
 Backing detail (per-row annotations, before/after deltas, regression checks)
-lives in `week4_eval_tracker_Anusha.xlsx`, Steps 1-4 (dated 2026-09-05
+lives in `eval_tracker_Anusha.xlsx`, Steps 1-4 (dated 2026-09-05
 sections). This is the condensed version: category names, grouped examples,
 and the single most impactful failure type to address next.
 
@@ -50,8 +50,8 @@ refusing up front.
 - Unlike the deep-workflow non-termination cases (also `known_failure`, but
   already characterized as a delegated-chain-completion problem with a
   different, larger fix shape) and the provider-latency cluster (an accepted,
-  already-evaluated trade-off — see the model-comparison section of
-  `WEEK4_HANDOVER_2026-09-04.md`), this cluster is a bounded, prompt-level fix
+  already-evaluated trade-off, see "What was NOT chased further" below),
+  this cluster is a bounded, prompt-level fix
   with a clear before/after signal already available (2 reproducing cases,
   identical shape both times).
 
@@ -78,4 +78,4 @@ event) *before* calling any mutation tool, not after — mirroring the
   violations (missed approval gates, mutations without conflict checks,
   attempted mutations on requests that should be rejected). Kept the current
   model and raised its provider request timeout (30s -> 60s) instead of
-  chasing a swap. Full comparison data in `WEEK4_HANDOVER_2026-09-04.md`.
+  chasing a swap.

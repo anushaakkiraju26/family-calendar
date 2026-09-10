@@ -67,7 +67,7 @@ Hero workflow:
 
     family-activity-agent "Coordinate next week for family-1. Check school events, resolve activity and transportation conflicts, generate three schedule options for parent-1, parent-2, and vikram, recommend the best plan, and draft reminders. Do not apply changes until I approve."
 
-For a repeatable course demonstration, seed an isolated database and point one
+For a repeatable demonstration, seed an isolated database and point one
 CLI invocation at it:
 
     python tools/seed_hero_demo.py
@@ -209,9 +209,10 @@ the calendar before retrying because the approved tool call may have completed.
 ## Reminder MVP scope
 
 Reminder tools draft and store message text, recipients, channel, and scheduled
-time. They do not send SMS messages. Actual delivery through Twilio and a
-background worker is future work; agent responses must describe reminders as
-saved drafts rather than sent or guaranteed deliveries.
+time. You can set up text (SMS) or WhatsApp to actually send these reminders —
+that delivery integration (e.g., Twilio and a background worker) isn't included
+yet, so currently the project only drafts messages; agent responses describe
+reminders as saved drafts rather than sent or guaranteed deliveries.
 
 ## Run only the MCP server
 
@@ -229,7 +230,7 @@ Set FAMILY_ACTIVITY_DB to override the SQLite database location.
 
 ## Security note
 
-For this local course scaffold, tools accept family_id. Before production,
+For this local scaffold, tools accept family_id. Before production,
 derive it from authenticated identity and require server-issued confirmation
 tokens for destructive and notification-related operations.
 
@@ -239,7 +240,7 @@ Run `pytest` for the offline evaluation suite. It uses a deterministic fake chat
 model for real Deep Agent + LangGraph + MCP + SQLite integration tests, so it
 does not consume Nebius quota. `evaluations/cases.json` contains the live/manual
 prompt matrix, expected tools, approval points, outcomes, and failure cases used
-for the course demo.
+for the demo.
 
 ## Optional LangSmith tracing
 
@@ -258,6 +259,6 @@ surface, and MVP, plus non-sensitive model and reminder-mode metadata. The CLI
 waits for background traces before exiting.
 
 LangSmith traces may contain prompts, model responses, tool arguments, and tool
-results. Use synthetic family names and activities for course demonstrations;
+results. Use synthetic family names and activities for demonstrations;
 do not trace real children's names, schedules, phone numbers, or other private
 family data. Leave `LANGSMITH_TRACING=false` for ordinary private use.
