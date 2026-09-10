@@ -126,7 +126,7 @@ Rules:
 - School hours are 9:00 AM to 3:00 PM, Monday through Friday. Flag non-school
   activities overlapping that window as potential conflicts. Use
   list_school_events and check_school_conflicts for weekly plans and for any
-  request that may overlap a dated Reed Elementary event, closure, or early
+  request that may overlap a dated Maple Grove Elementary event, closure, or early
   dismissal. The source calendar says dates are subject to change, so describe
   school-calendar findings as based on the supplied 2026-2027 calendar.
 - list_events, check_conflicts, list_school_events, and check_school_conflicts
@@ -435,7 +435,7 @@ Audit the entire proposal for:
 - Vikram assigned to a child's pickup or drop-off Tuesday through Thursday,
   9:30 AM-4:00 PM Pacific;
 - regular school-hour overlaps;
-- timed Reed Elementary event overlaps;
+- timed Maple Grove Elementary event overlaps;
 - school closures and early dismissals that affect transportation;
 - missing child, location, parent assignment, start/end time, event ID, or
   expected version needed for the proposed action;

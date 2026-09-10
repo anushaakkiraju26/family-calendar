@@ -1,8 +1,8 @@
 {
-  "school": "Reed Elementary School",
+  "school": "Maple Grove Elementary School",
   "school_year": "2026-2027",
   "timezone": "America/Los_Angeles",
-  "source": "SchoolCalendar2026-2027.jpeg supplied by the project owner",
+  "source": "Transcribed from a school-provided 2026-2027 calendar handout",
   "note": "Transcribed for course-demo scheduling. The source states that all dates are subject to change.",
   "events": [
     {"start_date":"2026-08-03","title":"TK/Kinder Playdate","category":"school_event","start_time":"16:30"},
@@ -10,7 +10,7 @@
     {"start_date":"2026-08-14","title":"Spirit Day: Favorite Color Day","category":"spirit_day"},
     {"start_date":"2026-08-14","title":"Welcome Back Picnic","category":"school_event"},
     {"start_date":"2026-08-18","title":"PTA Meeting in Library","category":"school_event","start_time":"18:30"},
-    {"start_date":"2026-08-28","title":"Spirit Day: Blue & Gold or Reed Shirts","category":"spirit_day"},
+    {"start_date":"2026-08-28","title":"Spirit Day: Blue & Gold or Spirit Shirts","category":"spirit_day"},
     {"start_date":"2026-09-01","title":"Back to School Night","category":"school_event","start_time":"16:30","end_time":"18:00"},
     {"start_date":"2026-09-02","title":"Picture Day","category":"school_event"},
     {"start_date":"2026-09-04","title":"Activity Day: Blacktop Games","category":"school_event"},

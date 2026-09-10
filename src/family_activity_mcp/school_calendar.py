@@ -11,7 +11,7 @@ PACIFIC = ZoneInfo("America/Los_Angeles")
 DEFAULT_CALENDAR = (
     Path(__file__).resolve().parents[2]
     / "data"
-    / "reed_elementary_2026_2027.json"
+    / "maple_grove_elementary_2026_2027.json"
 )
 
 

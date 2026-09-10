@@ -124,7 +124,7 @@ def check_conflicts(
 
 @mcp.tool()
 def list_school_events(start_date: date, end_date: date) -> str:
-    """List Reed Elementary events, closures, and early-dismissal dates."""
+    """List Maple Grove Elementary events, closures, and early-dismissal dates."""
     return output(find_school_events(start_date, end_date))
 
 

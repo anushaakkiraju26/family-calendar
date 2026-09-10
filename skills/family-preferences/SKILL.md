@@ -9,8 +9,8 @@ description: How to use stored household preferences without inventing personal 
   `America/Los_Angeles` so PST/PDT daylight-saving changes are handled
   automatically.
 - School hours: 9:00 AM to 3:00 PM, Monday through Friday.
-- School calendar source: the reviewed Reed Elementary 2026-2027 calendar in
-  `data/reed_elementary_2026_2027.json`.
+- School calendar source: the reviewed Maple Grove Elementary 2026-2027 calendar in
+  `data/maple_grove_elementary_2026_2027.json`.
 - Treat activities overlapping school hours on school days as potential
   conflicts unless the parent explicitly says the activity is school-related.
 - Quiet hours: 9:00 PM to 7:00 AM Monday through Friday, and 10:00 PM to

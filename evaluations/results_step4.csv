@@ -21,7 +21,7 @@ weekly-deep-planning,deep_weekly_workflow,stalled_or_shortcut_no_delegation,Fals
 |------------|-------|------|-------|----------------|----------|
 | Sep 8 (Tue) | Leo Soccer Practice | 16:00‑17:00 | leo | Yes | Community Field |
 | Sep 8 (Tue) | Child‑2 Music Lesson | 16:00‑17:00 | child‑2 | Yes | Music School |
-| Sep 9 (Wed) | Classroom Volunteer Shift | 15:30‑16:30 | leo | No | Reed Elementary |
+| Sep 9 (Wed) | Classroom Volunteer Shift | 15:30‑16:30 | leo | No | Maple Grove Elementary |
 
 **Parent ",01a06aba-d79b-7fc0-903d-b6de2a422c56,1.0
 weekly-deep-planning,deep_weekly_workflow,stalled_or_shortcut_no_delegation,False,"check_conflicts,check_school_conflicts,list_events,list_school_events","check_conflicts,check_school_conflicts,generate_schedule_candidates,grep,list_events,list_parent_availability,list_school_events,ls,task",False,69.7,False,,False,False,182489.0,16251.0,198740.0,"**Conflicts identified for week 2026‑09‑07 → 2026‑09‑13 (family‑1)**  
@@ -65,7 +65,7 @@ hero-weekly-candidates,deep_weekly_workflow,stalled_or_shortcut_no_delegation,Fa
 **Assignments**  
 - **Leo’s Soccer Practice** (event 62aabb0f) – Saturday Sep 8 4:00‑5:00 PM, Community Field – assigned to **parent‑2** (pickup 3:45 PM, dropoff 5:15 PM).  
 - **Child‑2 Music Lesson** (event 33864a92) – Saturday Sep 8 4:00‑5:00 PM, Music School – assigned to **parent‑1** (pickup 3:45 PM, dropoff 5:15 PM).  
-- **Classroom Volunteer Shift** (event 8e872a3e) – Sunday Sep 9 3:30‑4:30 PM, Reed Elementary – assigned to *",01a06ac1-2715-7662-b83d-ea0e29abfdb9,3.0
+- **Classroom Volunteer Shift** (event 8e872a3e) – Sunday Sep 9 3:30‑4:30 PM, Maple Grove Elementary – assigned to *",01a06ac1-2715-7662-b83d-ea0e29abfdb9,3.0
 vikram-availability-rule,fast_path_reject,pending_fixture,,"check_parent_availability,check_transportation_conflicts",,,,,,,,,,,,,
 stale-weekly-option,fast_path_reject,pending_fixture,,list_events,,,,,,,,,,,,,
 family-outing-weekend,outing_workflow,pending_fixture,,"list_events,list_school_events,check_outing_time_window,you-search",,,,,,,,,,,,,

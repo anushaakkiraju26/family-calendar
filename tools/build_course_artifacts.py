@@ -263,7 +263,7 @@ SQLite: events + reminders + availability_rules + audit_logs""")
         ["Intake Agent", "Normalizes ambiguous or multi-activity requests.", "Temporary event_request.json"],
         ["Calendar Agent", "Handles complex searches and event lifecycle operations.", "Calendar tools + calendar policy"],
         ["Conflict Agent", "Explains child and parent overlaps without mutating state.", "check_conflicts"],
-        ["Weekly Planner", "Combines family events, Reed school dates, and proposed parent assignments.", "Read-only calendar and school tools"],
+        ["Weekly Planner", "Combines family events, Maple Grove school dates, and proposed parent assignments.", "Read-only calendar and school tools"],
         ["Transportation Agent", "Generates ranked assignment and pickup/drop-off candidates.", "Availability, transportation, and candidate tools"],
         ["Family Outing Agent", "Checks free time, searches current sources, and ranks outing ideas.", "Calendar, school, and You.com tools"],
         ["Schedule Reviewer", "Audits a weekly plan and requires revision when blocking issues remain.", "Shared plan and review artifacts"],
@@ -278,7 +278,7 @@ SQLite: events + reminders + availability_rules + audit_logs""")
         ["delete_event", "Write", "Soft-delete and cancel scheduled reminders.", "Required"],
         ["restore_event", "Write", "Restore a soft-deleted event.", "Required"],
         ["check_conflicts", "Read", "Explain overlapping child/parent activities.", "No"],
-        ["list_school_events", "Read", "List Reed Elementary dates in a range.", "No"],
+        ["list_school_events", "Read", "List Maple Grove Elementary dates in a range.", "No"],
         ["check_school_conflicts", "Read", "Check school hours, closures, early dismissal, and timed events.", "No"],
         ["list_parent_availability", "Read", "List structured parent unavailability rules.", "No"],
         ["check_parent_availability", "Read", "Validate a proposed responsibility against availability.", "No"],
@@ -675,18 +675,18 @@ print("Try this after adding YDC_API_KEY to .env:\\n", outing_prompt)
 This is the workflow that makes the project visibly more agentic than a tool router. A weekly request requires several isolated specialists and shared artifacts:
 
 1. **Intake Agent** normalizes the week and family goal.
-2. **Weekly Planner** loads existing family events and Reed school events.
+2. **Weekly Planner** loads existing family events and Maple Grove school events.
 3. **Transportation Agent** calls the deterministic availability, transportation, and candidate tools to produce three ranked options.
 4. **Schedule Reviewer** audits the recommended option—not one event at a time.
 5. A rejected review loops back to planning for revision and another review.
 6. **Reminder Agent** drafts reminders only after review approval.
 7. Proposed writes carry expected versions and are emitted together so the parent sees one grouped approval set.
 
-The school source is the supplied Reed Elementary 2026–2027 calendar. Its dates are subject to change, so this is reviewed project data rather than a live school feed."""),
+The school source is the supplied Maple Grove Elementary 2026–2027 calendar. Its dates are subject to change, so this is reviewed project data rather than a live school feed."""),
         code("""import json
 
 school_calendar = json.loads(
-    Path("data/reed_elementary_2026_2027.json").read_text()
+    Path("data/maple_grove_elementary_2026_2027.json").read_text()
 )
 print(school_calendar["school"], school_calendar["school_year"])
 print("Transcribed events:", len(school_calendar["events"]))

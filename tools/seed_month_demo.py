@@ -90,7 +90,7 @@ def build_events(start_day: date) -> list[EventCreate]:
               assigned_parent_id="parent-1", pickup_required=True,
               dropoff_required=True),
         event(date(2026, 9, 17), "Parent-teacher conference", (14, 30), (15, 15),
-              "conference", child_id="leo", location="Reed Elementary",
+              "conference", child_id="leo", location="Maple Grove Elementary",
               assigned_parent_id="parent-1"),
     ])
     return sorted(events, key=lambda item: item.start_at)

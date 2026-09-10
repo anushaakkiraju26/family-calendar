@@ -38,7 +38,7 @@ Simple single-event requests retain a low-latency direct-tool path. A request
 to coordinate or review a whole week uses the full multi-agent workflow:
 
 1. Intake Agent normalizes the goal and date range.
-2. Weekly Planner loads family events and the Reed Elementary calendar.
+2. Weekly Planner loads family events and the Maple Grove Elementary calendar.
 3. Transportation Agent loads structured parent availability and generates
    three deterministically scored assignment candidates.
 4. Conflict checks cover children, assigned parents, transportation coverage,
@@ -90,7 +90,7 @@ fails through the existing `expected_version` guard.
 
 ## Family outing research
 
-The Family Outing Agent first checks the family and Reed Elementary calendars,
+The Family Outing Agent first checks the family and Maple Grove Elementary calendars,
 then uses You.com's hosted MCP server to find current places and events for an
 available weekend or school-break window. Search results retain their source
 URLs. They remain proposals: the parent must verify hours,
@@ -131,8 +131,8 @@ remain authoritative there regardless of what the frontend shows.
 
 ## School calendar
 
-`data/reed_elementary_2026_2027.json` is a reviewed transcription of the
-attached Reed Elementary School 2026–2027 calendar. The original calendar says
+`data/maple_grove_elementary_2026_2027.json` is a reviewed transcription of the
+attached Maple Grove Elementary School 2026–2027 calendar. The original calendar says
 all dates are subject to change. The agent therefore identifies this file as
 its source and does not describe it as live school data.
 

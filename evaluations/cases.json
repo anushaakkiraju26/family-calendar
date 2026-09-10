@@ -147,7 +147,7 @@
     "expected_tools": ["check_conflicts", "check_school_conflicts"],
     "expected_tool_order": ["check_conflicts", "check_school_conflicts"],
     "approval": "none while conflicts remain",
-    "expected_outcome": "The agent reports overlaps with both the Reed Elementary Art Show and Open House before proposing a write.",
+    "expected_outcome": "The agent reports overlaps with both the Maple Grove Elementary Art Show and Open House before proposing a write.",
     "negative_scenario": true
   },
   {

@@ -49,7 +49,7 @@ def main() -> None:
             family_id="family-1", title="Classroom Volunteer Shift",
             start_at=monday + timedelta(days=2, hours=15, minutes=30),
             end_at=monday + timedelta(days=2, hours=16, minutes=30),
-            child_id="leo", location="Reed Elementary",
+            child_id="leo", location="Maple Grove Elementary",
             idempotency_key=f"hero-volunteer-{monday.date()}",
         ),
     ]

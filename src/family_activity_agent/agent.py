@@ -431,7 +431,7 @@ async def build_family_agent(model: Any | None = None):
             "name": "weekly-planner",
             "description": (
                 "Builds or revises a complete weekly family plan using family "
-                "events, Reed Elementary dates, conflicts, and parent assignments."
+                "events, Maple Grove Elementary dates, conflicts, and parent assignments."
             ),
             "system_prompt": WEEKLY_PLANNER_PROMPT,
             "tools": weekly_planning_tools,

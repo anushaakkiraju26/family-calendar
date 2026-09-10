@@ -14,7 +14,7 @@ description: Rules for safely reading and changing the shared family calendar.
 - Treat timed school-event overlaps as conflicts. Treat closures, early
   dismissals, and untimed school events as planning warnings that require the
   coordinator to explain transportation or supervision impact.
-- The supplied Reed Elementary 2026-2027 calendar says dates are subject to
+- The supplied Maple Grove Elementary 2026-2027 calendar says dates are subject to
   change; identify it as the source and do not present it as live school data.
 - Creating, updating, deleting, and restoring require parent approval.
 - Deletion is soft deletion and cancels pending reminders.
