@@ -1,0 +1,13 @@
+{
+  "dataset_revision": "core-golden-v1-pre-validation",
+  "evaluation_set": "core_golden",
+  "run_date": "2026-09-04",
+  "model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+  "core_cases": 20,
+  "live_cases": 20,
+  "live_runs_including_repeats": 24,
+  "pending_fixture_cases": 0,
+  "routing_passes": 11,
+  "overall_strict_passes": 9,
+  "notes": "Full core baseline after deterministic fixture completion. All 20 core cases ran live with 24 total samples, including three samples each for weekly-deep-planning and hero-weekly-candidates. Eleven runs passed routing, but only nine passed the strict composite of routing, tool selection, and observable tool order. Human validation of the newly passing outputs is still required before freezing the golden dataset. The configured nvidia/Nemotron-3-Nano-Omni model was unavailable, so the run used nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B as a command-level override; .env was not changed."
+}

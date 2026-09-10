@@ -1,6 +1,6 @@
 # Loom Script — Week 4 Evaluation Walkthrough
 
-Aim for ~5-7 minutes. Each section has a rough time budget and a `[SHOW: ...]`
+Aim for ~7-9 minutes. Each section has a rough time budget and a `[SHOW: ...]`
 cue for what to have on screen. Read it loosely, not word-for-word — the
 cues matter more than the exact phrasing.
 
@@ -81,19 +81,50 @@ cues matter more than the exact phrasing.
 > the same before/after evidence in the spreadsheet and in
 > FAILURE_ANALYSIS_2026-09-05.md.
 
-## 5. Measured impact (30s)
+## 5. Measured impact — pass rate, cost, latency (1 minute)
 
 `[SHOW: the strict-pass trajectory — 9/24 → 11/24 → 14/28 → 17/33]`
 
 > Strict pass rate went from 9 out of 24 to 17 out of 33 across the session,
-> as the dataset also grew to meet the 30-case requirement. I also
-> investigated whether the model itself was the bottleneck — I compared
-> three faster alternative models, and all three showed real safety
-> violations, like skipping the approval gate entirely or mutating without
-> checking conflicts. I kept the current model and raised its request
-> timeout instead, since a slow-but-safe model beats a fast-but-unsafe one.
+> as the dataset also grew to meet the 30-case requirement.
 
-## 6. Remaining failures (45s)
+`[SHOW: step1-4_summary.xlsx, "Cost Comparison" tab]`
+
+> Cost and latency moved in different directions, and both numbers need
+> context, not just the raw delta. Total token usage across the matched
+> cases went up about 58% — that looks bad at first glance, but several
+> cases recorded close to zero tokens *before* only because they timed out
+> before doing any real work. A low token count there meant "failed
+> immediately," not "was cheap." Latency actually went down about 10%
+> overall, because fewer cases now ride out a full 60-or-240-second timeout
+> with nothing to show for it.
+
+## 6. Model unavailability and model selection (1-1.5 minutes)
+
+`[SHOW: the .env diff (FAMILY_ACTIVITY_MODEL), or the WEEK4_HANDOVER.md "Model comparison investigation" section]`
+
+> Separate from the eval fixes, I found a real production bug: the model
+> configured as this project's actual default, `nvidia/Nemotron-3-Nano-Omni`,
+> wasn't available anymore — a genuine 404, confirmed directly against the
+> provider's own model catalog. That meant the real app was broken by
+> default, independent of anything the evaluation was testing.
+>
+> Before just swapping it for whatever was fastest, I compared three
+> alternative models against the same golden cases:
+
+`[SHOW: results_model_compare_*.csv files, or the model-comparison table in WEEK4_HANDOVER.md]`
+
+> `Nemotron-3.5-Lightning` mutated before checking conflicts and retried a
+> mutation after rejection. `Qwen3-30B-A3B-Instruct-2507` looked great on a
+> small sample, but a broader run showed it missing the approval gate
+> entirely. `Llama-3.3-70B-Instruct` mutated with zero conflict check at
+> all. All three were faster than what I ended up keeping,
+> `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B`, but every one of them showed a
+> real safety violation the current model doesn't. I kept it, fixed the
+> dead default in `.env`, and raised its request timeout instead — a
+> slow-but-safe model beats a fast-but-unsafe one.
+
+## 7. Remaining failures (45s)
 
 `[SHOW: FAILURE_ANALYSIS_2026-09-05.md]`
 
@@ -109,7 +140,7 @@ cues matter more than the exact phrasing.
 > which I've documented rather than tried to paper over with a longer
 > timeout.
 
-## 7. Next steps (15s)
+## 8. Next steps (15s)
 
 > Next: fix the premature-mutation-proposal cluster, get fixtures onto the
 > five still-pending extended cases, and take a real pass at why the deep

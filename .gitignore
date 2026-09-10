@@ -7,6 +7,33 @@ work/
 reviews/
 final/
 large_tool_results/
-frontend/
 .env
 .DS_Store
+
+# frontend build/deps (source lives in frontend/, these regenerate)
+frontend/node_modules/
+frontend/.next/
+frontend/.vinext/
+frontend/.wrangler/
+frontend/dist/
+frontend/.openai/
+
+# one-off evaluation run snapshots superseded by the tracked results/tracker files
+evaluations/results_baseline_2026-09-04-pre-triage.csv
+evaluations/results_baseline_2026-09-04-round1.csv
+evaluations/results_baseline_2026-09-04-round2.csv
+evaluations/results_baseline_2026-09-05-round3-28case.csv
+evaluations/results_baseline_metadata_2026-09-04-pre-triage.json
+evaluations/results_baseline_metadata_2026-09-04-round1.json
+evaluations/results_baseline_metadata_2026-09-04-round2.json
+evaluations/results_baseline_metadata_2026-09-05-round3-28case.json
+evaluations/WEEK4_HANDOVER.md
+evaluations/*.inspect.ndjson
+evaluations/week4_eval_tracker_Anusha.xlsm
+evaluations/week4_eval_tracker_Anusha_backup_2026-09-05.xlsx
+outputs/
+output/
+
+# large binary generated from a private course reference file; not reproducible from this repo
+docs/Family_Activity_Deep_Agent_Solution_Kit.docx
+tools/build_reference_style_documentation.py

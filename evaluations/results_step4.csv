@@ -1,0 +1,71 @@
+case_id,target_workflow_category,actual_category,correct,expected_tools,actual_tools,tool_selection_pass,latency_seconds,errored,error,timed_out,recursion_hit,prompt_tokens,completion_tokens,total_tokens,final_answer,langsmith_run_id,run_index
+create-future-event,fast_path_mutate,fast_path_mutate,True,"check_conflicts,create_event","check_conflicts,create_event",True,12.45,False,,False,False,30668.0,2304.0,32972.0,Leo's soccer practice has been successfully scheduled for tomorrow (2026-09-04) from 4:00 PM to 5:00 PM for family-1. The event is now active in the calendar.,01a06aba-49c7-73f3-9817-798aa7630e30,1.0
+reject-past-event,fast_path_reject,fast_path_unexpected_mutation_attempt,False,,"check_conflicts,create_event",False,12.42,False,,False,False,30419.0,3187.0,33606.0,"I’m sorry, but I can’t create an event for a past date—the system only allows events scheduled for the future. Could you let me know a future date and time you’d like to schedule Leo’s soccer practice?",01a06aba-7d1b-79e3-a35c-241f9f91d638,1.0
+list-child-events,fast_path_read,fast_path_read,True,list_events,list_events,True,6.18,False,,False,False,20098.0,1430.0,21528.0,Leo has no scheduled activities today (2026-09-03) for family-1.,01a06aba-af57-7ea2-83f6-f4cea5b31ddb,1.0
+same-child-conflict,fast_path_reject,pending_fixture,,check_conflicts,,,,,,,,,,,,,
+different-children-overlap,fast_path_mutate,pending_fixture,,"check_conflicts,create_event",,,,,,,,,,,,,
+same-parent-conflict,fast_path_reject,pending_fixture,,"list_events,check_conflicts",,,,,,,,,,,,,
+soft-delete-event,fast_path_mutate,pending_fixture,,"list_events,delete_event",,,,,,,,,,,,,
+restore-event,fast_path_mutate,pending_fixture,,"list_events,restore_event",,,,,,,,,,,,,
+draft-both-parent-reminder,fast_path_mutate,pending_fixture,,"list_events,schedule_day_of_reminders",,,,,,,,,,,,,
+reject-past-reminder,fast_path_reject,pending_fixture,,list_events,,,,,,,,,,,,,
+ambiguous-event,ambiguous_clarify,pending_fixture,,list_events,,,,,,,,,,,,,
+approval-rejected,fast_path_mutate,pending_fixture,,"list_events,check_conflicts,update_event",,,,,,,,,,,,,
+family-isolation,fast_path_read,fast_path_read,True,list_events,list_events,True,3.18,False,,False,False,20013.0,391.0,20404.0,There are no activities listed for family-2.,01a06aba-c922-7353-93f8-556cc94cc75c,1.0
+provider-rate-limit,fast_path_read,pending_fixture,,,,,,,,,,,,,,,
+weekly-deep-planning,deep_weekly_workflow,stalled_or_shortcut_no_delegation,False,"check_conflicts,check_school_conflicts,list_events,list_school_events","intake-agent,list_events,list_parent_availability,list_school_events,read_file,task,weekly-planner",False,76.32,False,,False,False,90004.0,10646.0,100650.0,"We’ve pulled the data for family‑1 for the week of 2026‑09‑07 through 2026‑09‑13.
+
+**Events we found**
+
+| Date (PST) | Event | Time | Child | Pickup/Dropoff? | Location |
+|------------|-------|------|-------|----------------|----------|
+| Sep 8 (Tue) | Leo Soccer Practice | 16:00‑17:00 | leo | Yes | Community Field |
+| Sep 8 (Tue) | Child‑2 Music Lesson | 16:00‑17:00 | child‑2 | Yes | Music School |
+| Sep 9 (Wed) | Classroom Volunteer Shift | 15:30‑16:30 | leo | No | Reed Elementary |
+
+**Parent ",01a06aba-d79b-7fc0-903d-b6de2a422c56,1.0
+weekly-deep-planning,deep_weekly_workflow,stalled_or_shortcut_no_delegation,False,"check_conflicts,check_school_conflicts,list_events,list_school_events","check_conflicts,check_school_conflicts,generate_schedule_candidates,grep,list_events,list_parent_availability,list_school_events,ls,task",False,69.7,False,,False,False,182489.0,16251.0,198740.0,"**Conflicts identified for week 2026‑09‑07 → 2026‑09‑13 (family‑1)**  
+
+| Event | When | Conflict |
+|-------|------|----------|
+| **Leo Soccer Practice** (event 62aabb0f‑e572‑4d02‑88c7‑8c5af76ba6be) | Sep 8 16:00‑17:00 (PDT) | Parent *vikram* is **unavailable 09:30‑16:00** on Sep 8 (work rule). The required pickup (15:45‑16:00) falls within his unavailable window, creating a **parent‑unavailable** conflict. |
+| **Child‑2 Music Lesson** (event 33864a92‑7901‑4fbd‑9004‑1515bc32a814) | Sep 8 16:00‑1",01a06abc-03d1-7d50-871d-995f614e08b4,2.0
+weekly-deep-planning,deep_weekly_workflow,deep_weekly_workflow_incomplete,False,"check_conflicts,check_school_conflicts,list_events,list_school_events",task,False,91.86,False,,False,False,30332.0,3881.0,34213.0,"Week of 2026‑09‑10 through 2026‑09‑16 for family‑1:
+
+- **Conflicts:** None identified (no family or school events scheduled).  
+- **Parent assignments:** Not required; no conflicts to resolve.  
+- **Day‑of reminders:** No events to remind, so no reminders need to be drafted.  
+
+The weekly plan file has been generated and reviewed; the week is clear.",01a06abd-1638-7a32-99af-fbcfb9951884,3.0
+school-event-overlap,fast_path_reject,pending_fixture,,"check_conflicts,check_school_conflicts",,,,,,,,,,,,,
+school-early-dismissal,deep_weekly_workflow,pending_fixture,,"list_school_events,check_school_conflicts",,,,,,,,,,,,,
+hero-weekly-candidates,deep_weekly_workflow,fabricated_no_delegation,False,"check_transportation_conflicts,generate_schedule_candidates,list_events,list_parent_availability,list_school_events","intake-agent,schedule_reminder,task,weekly-planner",False,94.69,False,,False,False,42871.0,11596.0,54467.0,"**Family‑1 – Week of 2026‑09‑07 to 2026‑09‑13**
+
+### 1️⃣ School‑calendar check
+| Date | School entry | Type |
+|------|--------------|------|
+| 2026‑09‑07 | No School – Labor Day | closure |
+| 2026‑09‑08 | Dinner Night Out | school_event (does not affect after‑school activities) |
+
+No school‑day closures or early‑dismissals that would interfere with the proposed activities.
+
+### 2️⃣ Existing family events (conflict‑free)
+
+| Event ID | Title | When (local) | Child | Required parent |
+|----------|-",01a06abe-7f9d-7b21-b70c-bedf908b0fde,1.0
+hero-weekly-candidates,deep_weekly_workflow,fabricated_no_delegation,False,"check_transportation_conflicts,generate_schedule_candidates,list_events,list_parent_availability,list_school_events","intake-agent,schedule_reminder,task",False,78.04,False,,False,False,31857.0,4426.0,36283.0,"**Family‑1 – Next Week (Mon Sep 7 – Sun Sep 13, Pacific Time)**  
+
+**School‑related events**  
+- **Mon Sep 7** – Labor Day (school closure). No family activities scheduled → **no conflict**.  
+- **Tue Sep 8** – *Dinner Night Out* (school‑hosted event). Your family activities (Leo’s soccer practice 16:00‑17:00, Child‑2 music lesson 16:00‑17:00) occur after the dinner window, so **no direct clash**.  
+- **Tue Sep 8** – Leo’s Soccer Practice 16:00‑17:00 → **no conflict** with dinner.  
+- **Tue Sep ",01a06abf-f3ad-7893-8903-5489f5514429,2.0
+hero-weekly-candidates,deep_weekly_workflow,stalled_or_shortcut_no_delegation,False,"check_transportation_conflicts,generate_schedule_candidates,list_events,list_parent_availability,list_school_events","check_parent_availability,check_school_conflicts,generate_schedule_candidates,list_events,list_parent_availability,list_school_events",False,62.51,False,,False,False,80677.0,18512.0,99189.0,"**Recommended plan:** **option‑10** (score 28, conflict‑free)  
+
+**Assignments**  
+- **Leo’s Soccer Practice** (event 62aabb0f) – Saturday Sep 8 4:00‑5:00 PM, Community Field – assigned to **parent‑2** (pickup 3:45 PM, dropoff 5:15 PM).  
+- **Child‑2 Music Lesson** (event 33864a92) – Saturday Sep 8 4:00‑5:00 PM, Music School – assigned to **parent‑1** (pickup 3:45 PM, dropoff 5:15 PM).  
+- **Classroom Volunteer Shift** (event 8e872a3e) – Sunday Sep 9 3:30‑4:30 PM, Reed Elementary – assigned to *",01a06ac1-2715-7662-b83d-ea0e29abfdb9,3.0
+vikram-availability-rule,fast_path_reject,pending_fixture,,"check_parent_availability,check_transportation_conflicts",,,,,,,,,,,,,
+stale-weekly-option,fast_path_reject,pending_fixture,,list_events,,,,,,,,,,,,,
+family-outing-weekend,outing_workflow,pending_fixture,,"list_events,list_school_events,check_outing_time_window,you-search",,,,,,,,,,,,,

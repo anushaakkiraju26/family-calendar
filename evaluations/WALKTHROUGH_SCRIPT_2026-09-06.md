@@ -1,6 +1,6 @@
 # Short Walkthrough Script
 
-~2-3 minutes. Four sections, no filler.
+~3-4 minutes. Four sections, no filler.
 
 ---
 
@@ -13,10 +13,37 @@
 > to restate it, correcting a reminder confirmation that implied delivery
 > the app never performs, requiring a real availability check instead of
 > trusting memorized policy text, and stopping the agent from falling back
-> to filesystem search when a calendar lookup came back empty. I also raised
-> the provider request timeout, expanded the dataset from 26 to 30 cases to
-> meet the requirement, and compared three faster alternative models before
-> deciding to keep the current one.
+> to filesystem search when a calendar lookup came back empty. I also
+> expanded the dataset from 26 to 30 cases to meet the requirement.
+>
+> Separately, I found that the model configured as the project's actual
+> default wasn't available at all anymore — a genuine 404, confirmed
+> directly against the provider's model catalog, which meant the real
+> product was broken by default, independent of anything the evaluation was
+> testing. 
+
+
+Before just swapping it to the next assigned default, I compared three faster alternative
+> models against the same golden cases, and all three showed real safety
+> violations — skipping the approval gate entirely, mutating without
+> checking conflicts, attempting a mutation on a request that should be
+> rejected outright — despite being faster. I kept the assigned default model, fixed
+> the dead default, and raised its request timeout instead, since a
+> slow-but-safe model beats a fast-but-unsafe one.
+
+nvidia/Nemotron-3-Nano-Omni — the model that was configured as the project's default in .env but turned out to be genuinely unavailable (a real 404, confirmed directly against Nebius's model catalog, not a transient error). It was replaced with nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B, the closest available successor and the one that ultimately won the 3-way comparison against the alternatives.
+
+Current model (kept): nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B — confirmed in .env as the committed default.
+
+The 3 alternatives compared, all rejected:
+
+nvidia/Nemotron-3.5-Lightning — fast, but mutated before checking conflicts, attempted a mutation instead of rejecting a conflict, and retried a mutation after rejection
+Qwen/Qwen3-30B-A3B-Instruct-2507 — looked great on a small sample, but a broader 17-case run showed it missing the approval gate entirely, attempting mutations on cases that should be rejected, and silently correcting a stale plan version instead of flagging it
+meta-llama/Llama-3.3-70B-Instruct — mutated with zero conflict check and a mangled event title, attempted a mutation on a conflict case, and missed the approval gate
+All three were faster than the current model but showed real safety violations, which is why the current one was kept despite its latency variance.
+
+
+
 
 ## What improved
 
@@ -28,6 +55,15 @@
 > baseline after every change, not just the case I was targeting. I scoped
 > the fix more precisely and re-verified all three cases together before
 > moving on.
+>
+> On cost and latency: total token usage across the matched cases went up
+> about 58%. At first that looks like a regression, but it isn't — several
+> cases recorded close to zero tokens *before* because they timed out
+> before doing any real work, so a low number there meant "failed
+> immediately," not "was cheap." Latency actually went down about 10%
+> overall, because fewer cases now ride out a full 60-or-240-second timeout
+> with nothing to show for it — one case alone dropped from always timing
+> out at 60 seconds to completing correctly in about 24.
 
 ## What still fails
 

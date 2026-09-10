@@ -120,14 +120,14 @@ recurring practices, simultaneous activities for two children, school-hour
 appointments, parent assignments, and pickup/drop-off requirements. Re-running
 the command does not create duplicates.
 
-The separate Kinday frontend repository is developed from `frontend/` and the
-private hosted calendar is available at:
-
-    https://kinday-family-planner.anusha-akkiraj319688.chatgpt.site
-
-The hosted UI currently contains a snapshot of the seeded SQLite records; it is
-not a live synchronization layer. Local calendar mutations remain authoritative
-in `data/family_activity.db`.
+The [`frontend/`](frontend/) directory is the Kinday calendar UI: a Next.js
+prototype seeded with a static snapshot of the same demo month, used to
+visualize what the agent's weekly plan looks like to a parent. See
+[frontend/README.md](frontend/README.md) for what it is and how to run it. It
+is a UI prototype, not a live client of the CLI/MCP backend: it holds its own
+copy of the data in the browser (`localStorage`) and does not read or write
+`data/family_activity.db`. Local calendar mutations made through the CLI
+remain authoritative there regardless of what the frontend shows.
 
 ## School calendar
 
@@ -180,7 +180,8 @@ of model reasoning.
 
 ## Setup
 
-    cd /Users/anushaakkiraju/family-activity-agent
+    git clone https://github.com/anushaakkiraju26/family-activity-agent.git
+    cd family-activity-agent
     python3 -m venv .venv
     source .venv/bin/activate
     pip install -e '.[dev]'

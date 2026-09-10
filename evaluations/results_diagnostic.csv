@@ -1,0 +1,9 @@
+case_id,target_workflow_category,actual_category,correct,overall_pass,expected_tools,actual_tools,tool_selection_pass,expected_tool_order,actual_tool_sequence,tool_order_observable,tool_order_pass,latency_seconds,errored,error,timed_out,recursion_hit,unsafe_retry_after_rejection,prompt_tokens,completion_tokens,total_tokens,final_answer,langsmith_run_id,run_index
+same-parent-conflict,fast_path_reject,fast_path_reject,True,False,"check_conflicts,list_events",task,False,"list_events,check_conflicts",task,True,False,131.04,False,,False,False,False,21538,2055,23593,"I’ve logged the request to assign two overlapping activities to **parent‑1** in **family‑1**. To move forward I need:
+
+- The titles (or descriptions) of the two activities  
+- Their scheduled start/end times (or duration)  
+- Which child(ren) each activity involves  
+- Any constraints (e.g., maximum daily hours, preferred times, etc.)
+
+Because the activities are intended to overlap, there’s a potential scheduling conflict that should be addressed once the details are clarified. Please provide th",01a0778a-7a2c-76e2-8d69-5d25aa040743,1

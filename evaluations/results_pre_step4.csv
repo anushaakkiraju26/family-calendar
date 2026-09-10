@@ -1,0 +1,52 @@
+case_id,target_workflow_category,actual_category,correct,expected_tools,actual_tools,tool_selection_pass,latency_seconds,errored,error,timed_out,recursion_hit,prompt_tokens,completion_tokens,total_tokens,final_answer,langsmith_run_id,run_index
+create-future-event,fast_path_mutate,fast_path_mutate,True,"check_conflicts,create_event","check_conflicts,create_event",True,9.5,False,,False,False,30382.0,2134.0,32516.0,Leo's soccer practice has been successfully scheduled for tomorrow (2026-09-04) from 4:00 PM to 5:00 PM Pacific Time for family-1. The event is now active in the calendar with no conflicts detected.,01a06a77-a3d6-78e3-bf42-ae3a5a32b491,1.0
+reject-past-event,fast_path_reject,fast_path_unexpected_mutation_attempt,False,,"check_conflicts,create_event",False,10.48,False,,False,False,30131.0,2561.0,32692.0,"I see that the requested start time (yesterday) is in the past relative to today’s date, and events must be scheduled for a future time. Could you let me know the new date and time you’d like to set for Leo’s soccer practice?",01a06a77-cc32-77e1-ac7e-57f1a6baac50,1.0
+list-child-events,fast_path_read,fast_path_read,True,list_events,list_events,True,5.48,False,,False,False,19906.0,1207.0,21113.0,Leo has no scheduled activities today (2026-09-03) for family-1.,01a06a77-f70d-76f2-8161-ae7ae2272a06,1.0
+same-child-conflict,fast_path_reject,pending_fixture,,check_conflicts,,,,,,,,,,,,,
+different-children-overlap,fast_path_mutate,pending_fixture,,"check_conflicts,create_event",,,,,,,,,,,,,
+same-parent-conflict,fast_path_reject,pending_fixture,,"list_events,check_conflicts",,,,,,,,,,,,,
+soft-delete-event,fast_path_mutate,pending_fixture,,"list_events,delete_event",,,,,,,,,,,,,
+restore-event,fast_path_mutate,pending_fixture,,"list_events,restore_event",,,,,,,,,,,,,
+draft-both-parent-reminder,fast_path_mutate,pending_fixture,,"list_events,schedule_day_of_reminders",,,,,,,,,,,,,
+reject-past-reminder,fast_path_reject,pending_fixture,,list_events,,,,,,,,,,,,,
+ambiguous-event,ambiguous_clarify,pending_fixture,,list_events,,,,,,,,,,,,,
+approval-rejected,fast_path_mutate,pending_fixture,,"list_events,check_conflicts,update_event",,,,,,,,,,,,,
+family-isolation,fast_path_read,fast_path_read,True,list_events,list_events,True,2.69,False,,False,False,19821.0,243.0,20064.0,There are no activities currently scheduled for family-2.,01a06a78-1289-7d32-a93c-ca19d53b1bf3,1.0
+provider-rate-limit,fast_path_read,pending_fixture,,,,,,,,,,,,,,,
+weekly-deep-planning,deep_weekly_workflow,stalled_or_shortcut_no_delegation,False,"check_conflicts,check_school_conflicts,list_events,list_school_events","glob,grep,intake-agent,list_events,list_parent_availability,ls,read_file,task,weekly-planner",False,223.51,False,,False,False,294958.0,12372.0,307330.0,"/.git/logs/refs/remotes/origin/HEAD
+/frontend/app/page.tsx
+/frontend/dist/client/_next/static/chunks/page-xPiAVMXT.js
+/frontend/dist/server/ssr/_next/static/page-D3JcUuml.js",01a06a78-1f22-7f82-bc74-daff007f43a1,1.0
+weekly-deep-planning,deep_weekly_workflow,stalled_or_shortcut_no_delegation,False,"check_conflicts,check_school_conflicts,list_events,list_school_events",task,False,20.91,False,,False,False,19965.0,2741.0,22706.0,"The system cannot proceed because family-1's data is missing from the filesystem. To coordinate next week's activities, I need access to family-1's event records, parent assignments, and school calendar information. 
+
+Please verify:
+1. That family-1 exists in the system (check `/work/` directory for family-1 related files)
+2. Provide any existing event data or calendar plans for family-1
+3. Confirm if this is a new family setup requiring initial configuration
+
+Without this foundational data, I c",01a06a7b-8a68-7ac1-87f8-a5138e3b518d,2.0
+weekly-deep-planning,deep_weekly_workflow,timed_out_incomplete,False,"check_conflicts,check_school_conflicts,list_events,list_school_events",,False,240.06,False,,True,False,0.0,0.0,0.0,,01a06a7b-de55-7102-b1b4-c8ff14060666,3.0
+school-event-overlap,fast_path_reject,pending_fixture,,"check_conflicts,check_school_conflicts",,,,,,,,,,,,,
+school-early-dismissal,deep_weekly_workflow,pending_fixture,,"list_school_events,check_school_conflicts",,,,,,,,,,,,,
+hero-weekly-candidates,deep_weekly_workflow,stalled_or_shortcut_no_delegation,False,"check_transportation_conflicts,generate_schedule_candidates,list_events,list_parent_availability,list_school_events","list_events,ls,read_file,task",False,93.83,False,,False,False,54753.0,11849.0,66602.0,"[{""id"": ""62aabb0f-e572-4d02-88c7-8c5af76ba6be"", ""family_id"": ""family-1"", ""title"": ""Leo Soccer Practice"", ""start_at"": ""2026-09-08T16:00:00-07:00"", ""end_at"": ""2026-09-08T17:00:00-07:00"", ""child_id"": ""leo"", ""location"": ""Community Field"", ""assigned_parent_id"": null, ""pickup_required"": true, ""dropoff_required"": true, ""pickup_at"": null, ""dropoff_at"": null, ""transportation_notes"": null, ""status"": ""active"", ""version"": 1, ""created_at"": ""2026-09-03T01:36:40.328045Z"", ""updated_at"": ""2026-09-03T01:36:40.328",01a06a7f-8a66-78d3-8a88-fde41782f293,1.0
+hero-weekly-candidates,deep_weekly_workflow,fabricated_no_delegation,False,"check_transportation_conflicts,generate_schedule_candidates,list_events,list_parent_availability,list_school_events","generate_schedule_candidates,list_events,list_parent_availability,list_school_events,read_file,schedule_day_of_reminders,schedule_reminder,task",False,86.21,False,,False,False,206613.0,15851.0,222464.0,"**Family‑1 Weekly Plan (Sep 7 – Sep 13, 2026)**  
+
+**School‑calendar events**  
+- **Sep 7** – Labor Day (no school).  
+- **Sep 8** – “Dinner Night Out” (school‑event; outside regular school hours, no conflict with family activities).  
+
+**Family activities**  
+| Date | Time (PT) | Event | Child | Location | Pickup/Dropoff |
+|------|-----------|-------|-------|----------|----------------|
+| Sep 8 | 16:00‑17:00 | Leo Soccer Practice | leo | Community Field | Yes (pickup 15:45, dropoff 17:00‑17:15)",01a06a80-fb1b-7663-b4c6-18d010bd786a,2.0
+hero-weekly-candidates,deep_weekly_workflow,deep_weekly_workflow_incomplete,False,"check_transportation_conflicts,generate_schedule_candidates,list_events,list_parent_availability,list_school_events","generate_schedule_candidates,list_events,list_school_events,schedule_day_of_reminders,schedule_reminder,task,transportation-agent",False,148.69,False,,False,False,134895.0,12044.0,146939.0,"**Family‑1 Weekly Plan (Sep 7 – Sep 13, 2026)**  
+
+| Day | Activity | Time | Location | Assigned Parent |
+|-----|----------|------|----------|-----------------|
+| **Mon Sep 7** | *No school – Labor Day closure* | – | – | – |
+| **Tue Sep 8** | Leo’s Soccer Practice | 4:00 PM – 5:00 PM | Community Field | **parent‑1** (via option‑10) |
+|     | Child‑2 Music Lesson | 4:00 PM – 5:00 PM | Music School | **parent‑2** (via option‑10) |
+| **Wed Sep 9** | Classroom Volunteer Shift (Leo) | 3:30 PM – 4:30 ",01a06a82-4fb5-7ff3-96ea-c60147968c3d,3.0
+vikram-availability-rule,fast_path_reject,pending_fixture,,"check_parent_availability,check_transportation_conflicts",,,,,,,,,,,,,
+stale-weekly-option,fast_path_reject,pending_fixture,,list_events,,,,,,,,,,,,,
+family-outing-weekend,outing_workflow,pending_fixture,,"list_events,list_school_events,check_outing_time_window,you-search",,,,,,,,,,,,,

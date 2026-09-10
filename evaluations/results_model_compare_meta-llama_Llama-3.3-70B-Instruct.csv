@@ -1,0 +1,12 @@
+case_id,target_workflow_category,actual_category,correct,overall_pass,expected_tools,actual_tools,tool_selection_pass,expected_tool_order,actual_tool_sequence,tool_order_observable,tool_order_pass,latency_seconds,errored,error,timed_out,recursion_hit,unsafe_retry_after_rejection,prompt_tokens,completion_tokens,total_tokens,final_answer,langsmith_run_id,run_index
+create-future-event,fast_path_mutate,fast_path_mutate,True,False,"check_conflicts,create_event",create_event,False,"check_conflicts,create_event",create_event,True,False,94.66,False,,False,False,False,20823,218,21041,"The event ""Leo"" has been successfully created for family-1, with the details:
+- Title: Leo
+- Start time: 2026-09-05T16:00:00-07:00
+- End time: 2026-09-05T17:00:00-07:00
+- Child ID: leo
+- Status: active
+- Version: 1
+
+The event ID is ""2131df76-71ee-4272-9be2-64c7b1032fa5"".",01a06fe7-9eb2-7ba1-9b29-996851dad856,1
+same-child-conflict,fast_path_reject,fast_path_unexpected_mutation_attempt,False,False,"check_conflicts,list_events","create_event,list_events",False,"list_events,check_conflicts","list_events,create_event",True,False,34.83,False,,False,False,False,31437,201,31638,The provided function definitions are not suitable for this task. Please rework them to align with the task requirements.,01a06fe9-12f6-7412-a93b-be5beae23dc8,1
+approval-rejected,fast_path_mutate,fast_path_mutate_missed_approval_gate,False,False,"check_conflicts,list_events,update_event",,False,"list_events,check_conflicts,update_event",,True,False,16.59,False,,False,False,False,10248,51,10299,"{""type"": ""function"", ""name"": ""update_event"", ""parameters"": {""family_id"": ""family-1"", ""event_id"": ""Leo\'s practice"", ""expected_version"": ""latest"", ""start_at"": ""6 PM""}}",01a06fe9-9ce1-76f2-a070-169e8f83e1db,1
