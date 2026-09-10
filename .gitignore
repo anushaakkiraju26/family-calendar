@@ -27,10 +27,10 @@ evaluations/results_baseline_metadata_2026-09-04-pre-triage.json
 evaluations/results_baseline_metadata_2026-09-04-round1.json
 evaluations/results_baseline_metadata_2026-09-04-round2.json
 evaluations/results_baseline_metadata_2026-09-05-round3-28case.json
-evaluations/WEEK4_HANDOVER.md
+evaluations/HANDOVER_DRAFT_2026-09-03.md
 evaluations/*.inspect.ndjson
-evaluations/week4_eval_tracker_Anusha.xlsm
-evaluations/week4_eval_tracker_Anusha_backup_2026-09-05.xlsx
+evaluations/eval_tracker_Anusha.xlsm
+evaluations/eval_tracker_Anusha_backup_2026-09-05.xlsx
 outputs/
 output/
 
