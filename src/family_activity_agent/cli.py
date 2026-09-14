@@ -57,7 +57,7 @@ def run_config(thread_id: str, model: str | None) -> dict:
         "metadata": {
             "surface": "cli",
             "model": model or os.getenv(
-                "FAMILY_ACTIVITY_MODEL", "nvidia/Nemotron-3-Nano-Omni"
+                "FAMILY_ACTIVITY_MODEL", "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B"
             ),
             "reminder_mode": "draft-only",
         },

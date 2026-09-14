@@ -482,7 +482,7 @@ async def build_family_agent(model: Any | None = None):
     else:
         model_name = model or os.getenv(
             "FAMILY_ACTIVITY_MODEL",
-            "nvidia/Nemotron-3-Nano-Omni",
+            "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
         )
         if model_name.startswith("nebius:"):
             model_name = model_name.removeprefix("nebius:")
