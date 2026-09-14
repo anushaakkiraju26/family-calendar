@@ -180,8 +180,8 @@ of model reasoning.
 
 ## Setup
 
-    git clone https://github.com/anushaakkiraju26/family-activity-agent.git
-    cd family-activity-agent
+    git clone https://github.com/anushaakkiraju26/family-calendar.git
+    cd family-calendar
     python3 -m venv .venv
     source .venv/bin/activate
     pip install -e '.[dev]'
