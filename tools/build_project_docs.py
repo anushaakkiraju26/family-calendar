@@ -480,7 +480,7 @@ else:
     os.environ["LANGSMITH_TRACING"] = "false"
     print("LangSmith tracing: disabled")
 
-print("Model:", os.getenv("FAMILY_ACTIVITY_MODEL", "nvidia/Nemotron-3-Nano-Omni"))
+print("Model:", os.getenv("FAMILY_ACTIVITY_MODEL", "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B"))
 """),
         md("""## 2. Family grounding
 

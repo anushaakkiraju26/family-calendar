@@ -192,7 +192,7 @@ You.com API key only when you want live family-outing research.
 
     NEBIUS_API_KEY=your-nebius-key
     NEBIUS_BASE_URL=https://api.tokenfactory.us-central1.nebius.com/v1/
-    FAMILY_ACTIVITY_MODEL=nvidia/Nemotron-3-Nano-Omni
+    FAMILY_ACTIVITY_MODEL=nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B
     YDC_API_KEY=your-you-com-key
     YDC_MCP_URL=https://api.you.com/mcp?tools=you-search,you-contents,you-research,you-answer,you-finance,you-balance,you-discover
 
